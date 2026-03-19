@@ -16,6 +16,8 @@ const btnLeft = document.getElementById('btnLeft');
 const btnRight = document.getElementById('btnRight');
 const gameArea = document.getElementById('gameArea');
 const cannonBarrel = document.getElementById('cannonBarrel');
+const gameOverModal = document.getElementById('gameOverModal');
+const restartBtn = document.getElementById('restartBtn');
 
 // 初始化
 function init() {
@@ -255,6 +257,11 @@ function createBullet() {
                     gameState.mosquitoes.splice(index, 1);
                 }
                 updateRadarDots();
+                
+                // 检查是否所有蚊子都被消灭
+                if (gameState.mosquitoes.length === 0) {
+                    showGameOver();
+                }
             }, 500);
             updateRadarDots();
         }
@@ -267,6 +274,24 @@ function createBullet() {
         }
     }, 20);
 }
+
+// 显示游戏结束弹窗
+function showGameOver() {
+    gameOverModal.style.display = 'flex';
+}
+
+// 重新开始游戏
+function restartGame() {
+    gameOverModal.style.display = 'none';
+    gameState.power = 60;
+    gameState.cannonAngle = -45;
+    cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
+    updatePowerBar();
+    spawnMosquitoes();
+}
+
+// 绑定重新开始按钮事件
+restartBtn.addEventListener('click', restartGame);
 
 // 启动游戏
 init();
