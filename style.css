@@ -1,0 +1,275 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #fff;
+    font-family: Arial, sans-serif;
+}
+
+.game-container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* 顶部区域 */
+.top-section {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    gap: 15px;
+}
+
+/* 雷达 */
+.radar {
+    width: 80px;
+    height: 80px;
+    border: 2px solid #333;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+    background: #f5f5f5;
+}
+
+.radar-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    border: 1px solid #999;
+    border-radius: 50%;
+}
+
+.radar-crosshair {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.radar-line {
+    position: absolute;
+    background: #666;
+}
+
+.radar-line.horizontal {
+    width: 100%;
+    height: 1px;
+    top: 50%;
+    left: 0;
+}
+
+.radar-line.vertical {
+    width: 1px;
+    height: 100%;
+    left: 50%;
+    top: 0;
+}
+
+.radar-dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #ff4444;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* 电力条 */
+.power-section {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.power-label {
+    font-size: 14px;
+    color: #333;
+    white-space: nowrap;
+}
+
+.power-bar {
+    flex: 1;
+    height: 20px;
+    border: 2px solid #333;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #e0e0e0;
+}
+
+.power-fill {
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    transition: width 0.3s ease;
+}
+
+/* 游戏区域 */
+.game-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 蚊子 - 30px黑球 */
+.mosquito {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: #000;
+    border-radius: 50%;
+}
+
+/* 炮筒区域 */
+.cannon-section {
+    height: 120px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 10px;
+}
+
+.cannon-base {
+    width: 80px;
+    height: 30px;
+    background: #555;
+    border-radius: 10px 10px 0 0;
+    position: absolute;
+    bottom: 0;
+}
+
+.cannon-barrel {
+    width: 33.33vw;
+    max-width: 150px;
+    height: 20px;
+    background: #333;
+    position: absolute;
+    bottom: 25px;
+    transform-origin: left center;
+    transform: rotate(-45deg);
+    left: 50%;
+    margin-left: -5px;
+    border-radius: 0 5px 5px 0;
+}
+
+.cannon-muzzle {
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 25px;
+    background: #222;
+    border-radius: 0 5px 5px 0;
+}
+
+.cannon-balls {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+}
+
+.ball {
+    width: 12px;
+    height: 12px;
+    background: #FFD700;
+    border-radius: 50%;
+    border: 1px solid #FFA500;
+}
+
+/* 底部按钮 */
+.controls {
+    height: 80px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 20px;
+    background: #f0f0f0;
+    border-top: 2px solid #ddd;
+}
+
+.control-btn {
+    width: 70px;
+    height: 50px;
+    border: 3px solid #333;
+    border-radius: 25px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.control-btn.red {
+    background: #f44336;
+    color: white;
+}
+
+.control-btn.green {
+    background: #4CAF50;
+    color: white;
+}
+
+/* 按钮状态 */
+.control-btn.active {
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    transform: scale(1.1);
+}
+
+/* 箭头按钮容器 */
+.arrow-container {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    margin-right: 15px;
+}
+
+/* 箭头按钮 */
+.arrow-btn {
+    width: 50px;
+    height: 50px;
+    border: 3px solid #333;
+    background: #FFA500;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.arrow-btn.left {
+    clip-path: polygon(100% 0%, 100% 100%, 0% 50%);
+    border-radius: 0;
+    margin-right: 100px;
+}
+
+.arrow-btn.right {
+    clip-path: polygon(0% 0%, 0% 100%, 100% 50%);
+    border-radius: 0;
+}
+
+.arrow-btn:active {
+    transform: scale(0.9);
+    background: #FF8C00;
+}

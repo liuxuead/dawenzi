@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>打蚊子游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- 顶部区域：雷达和电力条 -->
+        <div class="top-section">
+            <div class="radar" id="radar">
+                <div class="radar-circle"></div>
+                <div class="radar-crosshair">
+                    <div class="radar-line horizontal"></div>
+                    <div class="radar-line vertical"></div>
+                </div>
+            </div>
+            <div class="power-section">
+                <span class="power-label">电力</span>
+                <div class="power-bar">
+                    <div class="power-fill" id="powerFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏区域：蚊子 -->
+        <div class="game-area" id="gameArea">
+            <!-- 蚊子用黑球代替，30px直径 -->
+            <div class="mosquito" style="top: 15%; left: 60%;"></div>
+            <div class="mosquito" style="top: 25%; left: 75%;"></div>
+            <div class="mosquito" style="top: 35%; left: 55%;"></div>
+        </div>
+
+        <!-- 炮筒区域 -->
+        <div class="cannon-section">
+            <div class="cannon-base"></div>
+            <div class="cannon-barrel" id="cannonBarrel">
+                <div class="cannon-muzzle"></div>
+            </div>
+            <div class="cannon-balls" id="cannonBalls">
+                <div class="ball"></div>
+                <div class="ball"></div>
+                <div class="ball"></div>
+            </div>
+        </div>
+
+        <!-- 底部按钮区域 -->
+        <div class="controls">
+            <button class="control-btn red" id="btnRed" data-color="red">红</button>
+            <button class="control-btn green" id="btnGreen" data-color="green">绿</button>
+            <div class="arrow-container">
+                <button class="arrow-btn left" id="btnLeft">◀</button>
+                <button class="arrow-btn right" id="btnRight">▶</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
