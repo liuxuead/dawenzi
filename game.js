@@ -127,9 +127,11 @@ function setActiveButton(color) {
 function rotateCannon(degrees) {
     gameState.cannonAngle += degrees;
     
-    // 限制角度范围 -225 到 135（每个方向可转180度）
-    if (gameState.cannonAngle < -225) gameState.cannonAngle = -225;
-    if (gameState.cannonAngle > 135) gameState.cannonAngle = 135;
+    // 限制角度范围：垂直方向(-90度)左右各60度
+    // 向左最大：-90 - 60 = -150度
+    // 向右最大：-90 + 60 = -30度
+    if (gameState.cannonAngle < -150) gameState.cannonAngle = -150;
+    if (gameState.cannonAngle > -30) gameState.cannonAngle = -30;
     
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
 }
@@ -173,27 +175,97 @@ function fire() {
         cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg) scale(1)`;
     }, 200);
     
-    // 随机击中一只蚊子
-    if (gameState.mosquitoes.length > 0) {
-        const targetIndex = Math.floor(Math.random() * gameState.mosquitoes.length);
-        const target = gameState.mosquitoes[targetIndex];
+    // 创建炮弹
+    createBullet();
+}
+
+// 创建炮弹
+function createBullet() {
+    const bullet = document.createElement('div');
+    bullet.className = 'bullet';
+    
+    // 获取游戏区域的位置和尺寸
+    const gameAreaRect = gameArea.getBoundingClientRect();
+    
+    // 计算炮口位置（炮筒末端）
+    const angleRad = gameState.cannonAngle * Math.PI / 180;
+    const cannonLength = cannonBarrel.offsetWidth;
+    
+    // 炮筒旋转中心（根据CSS计算）
+    // left: 50%, margin-left: -5px
+    const pivotX = gameAreaRect.width / 2 - 5;
+    // 炮筒在游戏区域下方，所以旋转中心的Y坐标应该是游戏区域底部
+    // bottom: 15px, height: 20px，炮筒中心在bottom + 10px的位置
+    const pivotY = gameAreaRect.height + 15 + 10;
+    
+    // 炮口位置（右端点，根据角度计算）
+    const startX = pivotX + Math.cos(angleRad) * cannonLength;
+    const startY = pivotY + Math.sin(angleRad) * cannonLength;
+    
+    // 设置炮弹初始位置（居中）
+    bullet.style.left = (startX - 7.5) + 'px';
+    bullet.style.top = (startY - 7.5) + 'px';
+    
+    gameArea.appendChild(bullet);
+    
+    // 计算飞行方向
+    const speed = 15;
+    const vx = Math.cos(angleRad) * speed;
+    const vy = Math.sin(angleRad) * speed;
+    
+    // 炮弹飞行
+    let bulletX = startX - 7.5;
+    let bulletY = startY - 7.5;
+    
+    const flyInterval = setInterval(() => {
+        bulletX += vx;
+        bulletY += vy;
         
-        // 蚊子被击中效果
-        target.element.style.transform = 'scale(1.5)';
-        target.element.style.opacity = '0';
-        updateRadarDots();
+        bullet.style.left = bulletX + 'px';
+        bullet.style.top = bulletY + 'px';
         
-        setTimeout(() => {
-            // 重新生成蚊子
-            target.x = Math.random() * 80 + 10;
-            target.y = Math.random() * 60 + 10;
-            target.element.style.left = target.x + '%';
-            target.element.style.top = target.y + '%';
-            target.element.style.transform = 'scale(1)';
-            target.element.style.opacity = '1';
+        // 检测是否击中蚊子
+        const bulletRect = bullet.getBoundingClientRect();
+        let hit = false;
+        let hitMosquito = null;
+        
+        gameState.mosquitoes.forEach(m => {
+            const mosquitoRect = m.element.getBoundingClientRect();
+            
+            // 简单的碰撞检测
+            if (bulletRect.left < mosquitoRect.right &&
+                bulletRect.right > mosquitoRect.left &&
+                bulletRect.top < mosquitoRect.bottom &&
+                bulletRect.bottom > mosquitoRect.top) {
+                
+                // 击中蚊子
+                m.element.style.transform = 'scale(1.5)';
+                m.element.style.opacity = '0';
+                hit = true;
+                hitMosquito = m;
+            }
+        });
+        
+        // 如果击中蚊子，移除该蚊子
+        if (hitMosquito) {
+            setTimeout(() => {
+                hitMosquito.element.remove();
+                const index = gameState.mosquitoes.indexOf(hitMosquito);
+                if (index > -1) {
+                    gameState.mosquitoes.splice(index, 1);
+                }
+                updateRadarDots();
+            }, 500);
             updateRadarDots();
-        }, 500);
-    }
+        }
+        
+        // 检测是否超出屏幕
+        if (bulletX < -20 || bulletX > gameAreaRect.width + 20 ||
+            bulletY < -20 || bulletY > gameAreaRect.height + 20 || hit) {
+            clearInterval(flyInterval);
+            bullet.remove();
+        }
+    }, 20);
 }
 
 // 启动游戏
