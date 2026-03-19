@@ -205,7 +205,8 @@ html, body {
     padding: 10px 20px;
     background: #f0f0f0;
     border-top: 2px solid #ddd;
-    margin-top: -100px;
+    position: relative;
+    z-index: 100;
 }
 
 .control-btn {
@@ -264,7 +265,7 @@ html, body {
 .arrow-btn.left {
     clip-path: polygon(100% 0%, 100% 100%, 0% 50%);
     border-radius: 0;
-    margin-right: 100px;
+    margin-right: 50px;
 }
 
 .arrow-btn.right {
