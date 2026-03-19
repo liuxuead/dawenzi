@@ -134,7 +134,7 @@ html, body {
 
 /* 炮筒区域 */
 .cannon-section {
-    height: 120px;
+    height: 70px;
     position: relative;
     display: flex;
     justify-content: center;
@@ -178,7 +178,7 @@ html, body {
 
 .cannon-balls {
     position: absolute;
-    bottom: 50px;
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -203,6 +203,7 @@ html, body {
     padding: 10px 20px;
     background: #f0f0f0;
     border-top: 2px solid #ddd;
+    margin-top: -50px;
 }
 
 .control-btn {
