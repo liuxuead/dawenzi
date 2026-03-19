@@ -134,7 +134,7 @@ html, body {
 
 /* 炮筒区域 */
 .cannon-section {
-    height: 100px;
+    height: 200px;
     position: relative;
     display: flex;
     justify-content: center;
@@ -148,7 +148,7 @@ html, body {
     background: #555;
     border-radius: 10px 10px 0 0;
     position: absolute;
-    bottom: 80px;
+    bottom: 150px;
     left: 50%;
     transform: translateX(-50%);
 }
@@ -159,7 +159,7 @@ html, body {
     height: 20px;
     background: #333;
     position: absolute;
-    bottom: 95px;
+    bottom: 165px;
     transform-origin: left center;
     transform: rotate(-45deg);
     left: 50%;
