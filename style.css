@@ -14,11 +14,12 @@ html, body {
 
 .game-container {
     width: 100%;
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     position: relative;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 /* 确保在移动设备上的兼容性 */
@@ -31,7 +32,7 @@ html, body {
 }
 
 /* 移动设备优化 */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 768px), (max-height: 500px) {
     /* 顶部区域调整 */
     .top-section {
         padding: 8px;
@@ -316,6 +317,7 @@ html, body {
     position: relative;
     z-index: 100;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 /* 移动设备控制台调整 */
