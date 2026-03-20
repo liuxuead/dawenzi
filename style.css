@@ -4,8 +4,7 @@
     box-sizing: border-box;
 }
 
-html, body {
-    width: 100%;
+body {
     height: 100%;
     overflow: hidden;
     background: #fff;
@@ -114,18 +113,17 @@ html, body {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    width: 50px;
-    height: 50px;
+    width: 60%;
+    height: 60%;
     border: 1px solid #999;
     border-radius: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .radar-crosshair {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
 }
@@ -252,14 +250,12 @@ html, body {
 }
 
 .cannon-base {
-    width: 80px;
-    height: 30px;
+    width: 120px;
+    height: 40px;
     background: #555;
     border-radius: 10px 10px 0 0;
-    position: absolute;
-    bottom: 0px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
+    z-index: 10;
 }
 
 .cannon-barrel {
@@ -281,10 +277,10 @@ html, body {
     right: -10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 15px;
-    height: 25px;
+    width: 20px;
+    height: 30px;
     background: #222;
-    border-radius: 0 5px 5px 0;
+    border-radius: 5px;
 }
 
 .cannon-balls {
@@ -364,8 +360,8 @@ html, body {
 .arrow-container {
     display: flex;
     align-items: center;
-    margin-left: auto;
-    margin-right: 15px;
+    margin-right: auto;
+    margin-left: 0;
 }
 
 /* 箭头按钮 */
@@ -394,7 +390,7 @@ html, body {
 }
 
 .arrow-btn:active {
-    transform: scale(0.9);
+    transform: scale(0.95);
     background: #FF8C00;
 }
 
@@ -435,7 +431,6 @@ html, body {
 .restart-btn {
     padding: 15px 40px;
     font-size: 20px;
-    font-weight: bold;
     background: #4CAF50;
     color: white;
     border: none;
@@ -447,8 +442,4 @@ html, body {
 .restart-btn:hover {
     background: #45a049;
     transform: scale(1.05);
-}
-
-.restart-btn:active {
-    transform: scale(0.95);
 }
