@@ -95,26 +95,26 @@ html, body {
 /* 针对v40等小屏幕设备的特殊处理 */
 @media screen and (max-height: 600px), (max-width: 480px) {
     .game-container {
-        height: auto !important;
+        height: 100vh !important;
         min-height: 100vh;
-        padding-bottom: 60px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
         display: flex !important;
         flex-direction: column !important;
     }
     
     .top-section {
-        padding: 3px 5px;
+        padding: 3px;
         gap: 5px;
         flex-shrink: 0;
     }
     
     .radar {
-        width: 45px;
-        height: 45px;
+        width: 48px;
+        height: 48px;
     }
     
     .power-section {
-        gap: 3px;
+        gap: 4px;
     }
     
     .power-label {
@@ -122,60 +122,49 @@ html, body {
     }
     
     .power-bar {
-        height: 12px;
+        height: 13px;
     }
     
     .game-area {
         flex: 1;
-        min-height: 150px;
+        min-height: 0;
         overflow: hidden;
     }
     
     .cannon-section {
-        height: 80px;
-        padding-bottom: 3px;
+        height: 100px;
+        padding-bottom: 5px;
         flex-shrink: 0;
     }
     
     .cannon-barrel {
-        height: 14px;
-        max-width: 50px;
-    }
-    
-    .cannon-base {
-        width: 100px;
-        height: 35px;
+        height: 16px;
+        max-width: 55px;
     }
     
     .controls {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        height: 55px;
-        padding: 3px 8px;
-        gap: 6px;
-        z-index: 99999 !important;
-        background: #f0f0f0;
-        border-top: 2px solid #ddd;
+        height: 60px;
+        padding: 5px 10px;
+        gap: 8px;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 9999;
     }
     
     .control-btn {
-        width: 50px;
-        height: 35px;
-        font-size: 13px;
-        border-width: 2px;
+        width: 55px;
+        height: 40px;
+        font-size: 14px;
     }
     
     .arrow-btn {
-        width: 40px;
-        height: 35px;
-        font-size: 16px;
-        border-width: 2px;
+        width: 45px;
+        height: 40px;
+        font-size: 18px;
     }
     
     .arrow-btn.left {
-        margin-right: 35px;
+        margin-right: 40px;
     }
 }
 
