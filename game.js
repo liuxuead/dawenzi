@@ -53,14 +53,30 @@ function spawnMosquitoes() {
     for (let i = 0; i < count; i++) {
         const mosquito = document.createElement('div');
         mosquito.className = 'mosquito';
+        
+        // 1号蚊子使用图片，不显示黑球背景
+        if (i === 0) {
+            mosquito.classList.add('mosquito-image-only');
+        }
+        
         mosquito.style.left = Math.random() * 80 + 10 + '%';
         mosquito.style.top = Math.random() * 60 + 10 + '%';
         
-        // 添加编号
-        const number = document.createElement('div');
-        number.className = 'mosquito-number';
-        number.textContent = i + 1;
-        mosquito.appendChild(number);
+        // 添加编号或图片
+        if (i === 0) {
+            // 编号1使用图片
+            const img = document.createElement('img');
+            img.className = 'mosquito-image';
+            img.src = 'wenzi1.png';
+            img.alt = '蚊子1';
+            mosquito.appendChild(img);
+        } else {
+            // 其他编号使用文字
+            const number = document.createElement('div');
+            number.className = 'mosquito-number';
+            number.textContent = i + 1;
+            mosquito.appendChild(number);
+        }
         
         gameArea.appendChild(mosquito);
         
