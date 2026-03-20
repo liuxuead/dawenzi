@@ -174,7 +174,7 @@ html, body {
     position: absolute;
     bottom: 15px;
     transform-origin: left center;
-    transform: rotate(-45deg);
+    transform: rotate(-90deg);
     left: 50%;
     margin-left: -5px;
     border-radius: 0 5px 5px 0;

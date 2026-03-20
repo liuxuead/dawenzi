@@ -4,7 +4,7 @@ const gameState = {
     isCharging: false,
     activeButton: null,
     mosquitoes: [],
-    cannonAngle: -45
+    cannonAngle: -90
 };
 
 // DOM 元素
@@ -93,16 +93,16 @@ function startMosquitoMovement() {
 
 // 绑定事件
 function bindEvents() {
-    // 红色按钮 - 充电/蓄力
+    // 红色按钮 - 发射
     btnRed.addEventListener('click', () => {
         setActiveButton('red');
-        startCharging();
+        fire();
     });
     
-    // 绿色按钮 - 发射
+    // 绿色按钮 - 充电/蓄力
     btnGreen.addEventListener('click', () => {
         setActiveButton('green');
-        fire();
+        startCharging();
     });
     
     // 左箭头 - 炮口向左旋转（逆时针）
@@ -289,7 +289,7 @@ function showGameOver() {
 function restartGame() {
     gameOverModal.style.display = 'none';
     gameState.power = 60;
-    gameState.cannonAngle = -45;
+    gameState.cannonAngle = -90;
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     updatePowerBar();
     spawnMosquitoes();
