@@ -20,6 +20,7 @@ const gameOverModal = document.getElementById('gameOverModal');
 const restartBtn = document.getElementById('restartBtn');
 const zapperSound = document.getElementById('zapperSound');
 const meizidanSound = document.getElementById('meizidanSound');
+const bgmSound = document.getElementById('bgmSound');
 const trailSvg = document.getElementById('trailSvg');
 
 // 初始化
@@ -30,7 +31,17 @@ function init() {
     spawnMosquitoes();
     startMosquitoMovement();
     bindEvents();
+    initBGM();
     console.log('Game init completed');
+}
+
+// 初始化背景音乐
+function initBGM() {
+    bgmSound.volume = 0.3; // 设置音量适中
+    bgmSound.play().catch(e => {
+        // 自动播放被阻止，等待用户交互后再播放
+        console.log('BGM autoplay blocked, waiting for user interaction');
+    });
 }
 
 // 初始化画布
@@ -54,29 +65,18 @@ function spawnMosquitoes() {
         const mosquito = document.createElement('div');
         mosquito.className = 'mosquito';
         
-        // 1号蚊子使用图片，不显示黑球背景
-        if (i === 0) {
-            mosquito.classList.add('mosquito-image-only');
-        }
+        // 所有蚊子都使用图片，不显示黑球背景
+        mosquito.classList.add('mosquito-image-only');
         
         mosquito.style.left = Math.random() * 80 + 10 + '%';
         mosquito.style.top = Math.random() * 60 + 10 + '%';
         
-        // 添加编号或图片
-        if (i === 0) {
-            // 编号1使用图片
-            const img = document.createElement('img');
-            img.className = 'mosquito-image';
-            img.src = 'wenzi1.png';
-            img.alt = '蚊子1';
-            mosquito.appendChild(img);
-        } else {
-            // 其他编号使用文字
-            const number = document.createElement('div');
-            number.className = 'mosquito-number';
-            number.textContent = i + 1;
-            mosquito.appendChild(number);
-        }
+        // 添加图片
+        const img = document.createElement('img');
+        img.className = 'mosquito-image';
+        img.src = `wenzi${i + 1}.png`;
+        img.alt = `蚊子${i + 1}`;
+        mosquito.appendChild(img);
         
         gameArea.appendChild(mosquito);
         
@@ -127,17 +127,20 @@ function startMosquitoMovement() {
 
 // 点击时间记录
 let lastClickTime = 0;
+let bgmStarted = false;
 
 // 绑定事件
 function bindEvents() {
     // 红色按钮 - 发射
     btnRed.addEventListener('click', () => {
+        startBGMOnFirstInteraction();
         setActiveButton('red');
         fire();
     });
     
     // 绿色按钮 - 充电/蓄力（根据点击速度调整充电速度）
     btnGreen.addEventListener('click', () => {
+        startBGMOnFirstInteraction();
         setActiveButton('green');
         const currentTime = Date.now();
         const clickInterval = currentTime - lastClickTime;
@@ -154,13 +157,25 @@ function bindEvents() {
     
     // 左箭头 - 炮口向左旋转（逆时针）
     btnLeft.addEventListener('click', () => {
+        startBGMOnFirstInteraction();
         rotateCannon(-5);
     });
     
     // 右箭头 - 炮口向右旋转（顺时针）
     btnRight.addEventListener('click', () => {
+        startBGMOnFirstInteraction();
         rotateCannon(5);
     });
+}
+
+// 首次交互时启动背景音乐
+function startBGMOnFirstInteraction() {
+    if (!bgmStarted) {
+        bgmStarted = true;
+        bgmSound.play().catch(e => {
+            console.log('BGM start failed:', e);
+        });
+    }
 }
 
 // 设置活动按钮
@@ -191,8 +206,12 @@ function rotateCannon(degrees) {
 // 发射
 function fire() {
     if (gameState.power < 10) {
+        // 暂停背景音乐，播放没子弹音效
+        pauseBGM();
         meizidanSound.currentTime = 0;
         meizidanSound.play();
+        // 音效结束后恢复背景音乐
+        meizidanSound.onended = resumeBGM;
         return;
     }
     
@@ -208,6 +227,20 @@ function fire() {
     
     // 创建炮弹
     createBullet();
+}
+
+// 暂停背景音乐
+function pauseBGM() {
+    if (!bgmSound.paused) {
+        bgmSound.pause();
+    }
+}
+
+// 恢复背景音乐
+function resumeBGM() {
+    bgmSound.play().catch(e => {
+        console.log('BGM resume failed:', e);
+    });
 }
 
 // 创建炮弹
@@ -297,9 +330,12 @@ function createBullet() {
                 hit = true;
                 hitMosquito = m;
                 
-                // 播放电击音效
+                // 暂停背景音乐，播放电击音效
+                pauseBGM();
                 zapperSound.currentTime = 0;
                 zapperSound.play();
+                // 音效结束后恢复背景音乐
+                zapperSound.onended = resumeBGM;
             }
         });
         
