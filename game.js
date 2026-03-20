@@ -55,6 +55,13 @@ function spawnMosquitoes() {
         mosquito.className = 'mosquito';
         mosquito.style.left = Math.random() * 80 + 10 + '%';
         mosquito.style.top = Math.random() * 60 + 10 + '%';
+        
+        // 添加编号
+        const number = document.createElement('div');
+        number.className = 'mosquito-number';
+        number.textContent = i + 1;
+        mosquito.appendChild(number);
+        
         gameArea.appendChild(mosquito);
         
         gameState.mosquitoes.push({
