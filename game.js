@@ -19,13 +19,24 @@ const cannonBarrel = document.getElementById('cannonBarrel');
 const gameOverModal = document.getElementById('gameOverModal');
 const restartBtn = document.getElementById('restartBtn');
 const zapperSound = document.getElementById('zapperSound');
+const meizidanSound = document.getElementById('meizidanSound');
+const trailSvg = document.getElementById('trailSvg');
 
 // 初始化
 function init() {
+    console.log('Game init started');
+    initCanvas();
     updatePowerBar();
     spawnMosquitoes();
     startMosquitoMovement();
     bindEvents();
+    console.log('Game init completed');
+}
+
+// 初始化画布
+function initCanvas() {
+    // SVG不需要初始化尺寸，它自动适应父容器
+    console.log('Canvas initialized');
 }
 
 // 更新电力条
@@ -164,7 +175,8 @@ function startCharging() {
 // 发射
 function fire() {
     if (gameState.power < 10) {
-        alert('电力不足！');
+        meizidanSound.currentTime = 0;
+        meizidanSound.play();
         return;
     }
     
@@ -197,13 +209,18 @@ function createBullet() {
     // 炮筒旋转中心（根据CSS计算）
     // left: 50%, margin-left: -5px
     const pivotX = gameAreaRect.width / 2 - 5;
-    // 炮筒在游戏区域下方，所以旋转中心的Y坐标应该是游戏区域底部
-    // bottom: 15px, height: 20px，炮筒中心在bottom + 10px的位置
-    const pivotY = gameAreaRect.height + 15 + 10;
+    // 炮筒在游戏区域下方，需要获取炮筒相对于游戏区域的实际位置
+    const cannonRect = cannonBarrel.getBoundingClientRect();
+    // 炮筒旋转中心是CSS中的transform-origin: left center
+    // 也就是炮筒的左端中心点
+    const pivotY = cannonRect.top + cannonRect.height / 2 - gameAreaRect.top;
     
     // 炮口位置（右端点，根据角度计算）
     const startX = pivotX + Math.cos(angleRad) * cannonLength;
     const startY = pivotY + Math.sin(angleRad) * cannonLength;
+    
+    console.log('pivotY:', pivotY, 'gameAreaRect.top:', gameAreaRect.top, 'gameAreaRect.height:', gameAreaRect.height);
+    console.log('cannonRect.top:', cannonRect.top, 'cannonRect.height:', cannonRect.height);
     
     // 设置炮弹初始位置（居中）
     bullet.style.left = (startX - 7.5) + 'px';
@@ -220,12 +237,29 @@ function createBullet() {
     let bulletX = startX - 7.5;
     let bulletY = startY - 7.5;
     
+    // 创建SVG轨迹线
+    console.log('Creating trail line, start:', startX, startY);
+    const trailLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    trailLine.setAttribute('stroke', '#FF0000');
+    trailLine.setAttribute('stroke-width', '5');
+    trailLine.setAttribute('fill', 'none');
+    trailLine.setAttribute('stroke-linecap', 'round');
+    trailLine.setAttribute('stroke-linejoin', 'round');
+    const points = [`${startX},${startY}`];
+    trailLine.setAttribute('points', points.join(' '));
+    trailSvg.appendChild(trailLine);
+    console.log('Trail line added to SVG');
+    
     const flyInterval = setInterval(() => {
         bulletX += vx;
         bulletY += vy;
         
         bullet.style.left = bulletX + 'px';
         bullet.style.top = bulletY + 'px';
+        
+        // 添加轨迹点
+        points.push(`${bulletX + 7.5},${bulletY + 7.5}`);
+        trailLine.setAttribute('points', points.join(' '));
         
         // 检测是否击中蚊子
         const bulletRect = bullet.getBoundingClientRect();
@@ -276,6 +310,11 @@ function createBullet() {
             bulletY < -20 || bulletY > gameAreaRect.height + 20 || hit) {
             clearInterval(flyInterval);
             bullet.remove();
+            
+            // 延迟清除轨迹
+            setTimeout(() => {
+                trailLine.remove();
+            }, 300);
         }
     }, 20);
 }
@@ -293,10 +332,24 @@ function restartGame() {
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     updatePowerBar();
     spawnMosquitoes();
+    
+    // 清除所有轨迹线
+    while (trailSvg.firstChild) {
+        trailSvg.removeChild(trailSvg.firstChild);
+    }
 }
 
 // 绑定重新开始按钮事件
 restartBtn.addEventListener('click', restartGame);
 
+// 窗口大小改变时重新初始化画布
+window.addEventListener('resize', () => {
+    initCanvas();
+});
+
 // 启动游戏
-init();
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        init();
+    }, 100);
+});

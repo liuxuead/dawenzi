@@ -31,6 +31,9 @@
             <div class="mosquito" style="top: 15%; left: 60%;"></div>
             <div class="mosquito" style="top: 25%; left: 75%;"></div>
             <div class="mosquito" style="top: 35%; left: 55%;"></div>
+            <!-- 轨迹SVG -->
+            <svg id="trailSvg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;">
+            </svg>
         </div>
 
         <!-- 炮筒区域 -->
@@ -68,6 +71,7 @@
 
     <!-- 音效 -->
     <audio id="zapperSound" src="zapper.mp3"></audio>
+    <audio id="meizidanSound" src="meizidan.mp3"></audio>
 
     <script src="game.js"></script>
 </body>
