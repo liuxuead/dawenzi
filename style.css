@@ -14,6 +14,7 @@ body {
 .game-container {
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -87,6 +88,70 @@ html, body {
     .bullet {
         width: 12px;
         height: 12px;
+    }
+}
+
+/* 针对v40等小屏幕设备的特殊处理 */
+@media screen and (max-height: 600px) and (max-width: 480px) {
+    .game-container {
+        height: 100vh;
+        height: 100dvh;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    .top-section {
+        padding: 5px;
+        gap: 8px;
+    }
+    
+    .radar {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .power-section {
+        gap: 5px;
+    }
+    
+    .power-label {
+        font-size: 11px;
+    }
+    
+    .power-bar {
+        height: 14px;
+    }
+    
+    .cannon-section {
+        height: 100px;
+        padding-bottom: 5px;
+    }
+    
+    .cannon-barrel {
+        height: 16px;
+        max-width: 55px;
+    }
+    
+    .controls {
+        height: 60px;
+        padding: 5px 10px;
+        gap: 8px;
+        margin-bottom: 0;
+    }
+    
+    .control-btn {
+        width: 55px;
+        height: 40px;
+        font-size: 14px;
+    }
+    
+    .arrow-btn {
+        width: 45px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .arrow-btn.left {
+        margin-right: 40px;
     }
 }
 
