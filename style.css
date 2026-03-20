@@ -27,6 +27,67 @@ html, body {
     padding: 0;
     height: 100%;
     overflow: hidden;
+    touch-action: none;
+}
+
+/* 移动设备优化 */
+@media screen and (max-width: 768px) {
+    /* 顶部区域调整 */
+    .top-section {
+        padding: 8px;
+        gap: 10px;
+    }
+    
+    /* 雷达大小调整 */
+    .radar {
+        width: 60px;
+        height: 60px;
+    }
+    
+    /* 电力条调整 */
+    .power-label {
+        font-size: 12px;
+    }
+    
+    .power-bar {
+        height: 16px;
+    }
+    
+    /* 炮筒调整 */
+    .cannon-barrel {
+        width: 25vw;
+        max-width: 60px;
+        height: 16px;
+    }
+    
+    /* 按钮调整 */
+    .control-btn {
+        width: 60px;
+        height: 45px;
+        font-size: 16px;
+    }
+    
+    /* 箭头按钮调整 */
+    .arrow-btn {
+        width: 50px;
+        height: 45px;
+    }
+    
+    /* 蚊子大小调整 */
+    .mosquito {
+        width: 25px;
+        height: 25px;
+    }
+    
+    .mosquito-number {
+        font-size: 10px;
+    }
+    
+    /* 炮弹大小调整 */
+    .bullet {
+        width: 12px;
+        height: 12px;
+    }
 }
 
 /* 顶部区域 */
@@ -246,14 +307,24 @@ html, body {
 .controls {
     height: 80px;
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: center;
-    gap: 20px;
-    padding: 10px 20px;
+    gap: 15px;
+    padding: 10px 15px;
     background: #f0f0f0;
     border-top: 2px solid #ddd;
     position: relative;
     z-index: 100;
+    box-sizing: border-box;
+}
+
+/* 移动设备控制台调整 */
+@media screen and (max-width: 768px) {
+    .controls {
+        height: 70px;
+        gap: 10px;
+        padding: 8px 12px;
+    }
 }
 
 .control-btn {
