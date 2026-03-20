@@ -125,6 +125,9 @@ function startMosquitoMovement() {
     }, 50);
 }
 
+// 点击时间记录
+let lastClickTime = 0;
+
 // 绑定事件
 function bindEvents() {
     // 红色按钮 - 发射
@@ -133,10 +136,20 @@ function bindEvents() {
         fire();
     });
     
-    // 绿色按钮 - 充电/蓄力
+    // 绿色按钮 - 充电/蓄力（根据点击速度调整充电速度）
     btnGreen.addEventListener('click', () => {
         setActiveButton('green');
-        startCharging();
+        const currentTime = Date.now();
+        const clickInterval = currentTime - lastClickTime;
+        lastClickTime = currentTime;
+        
+        // 根据点击间隔调整充电量：点击越快，充电越多
+        let chargeAmount = 5; // 默认充电量
+        if (clickInterval < 300) chargeAmount = 15; // 快速点击
+        else if (clickInterval < 600) chargeAmount = 10; // 中等速度点击
+        
+        gameState.power = Math.min(gameState.power + chargeAmount, 100);
+        updatePowerBar();
     });
     
     // 左箭头 - 炮口向左旋转（逆时针）
@@ -173,27 +186,7 @@ function rotateCannon(degrees) {
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
 }
 
-// 开始充电
-function startCharging() {
-    if (gameState.isCharging) return;
-    gameState.isCharging = true;
-    
-    const chargeInterval = setInterval(() => {
-        if (gameState.power < 100) {
-            gameState.power += 2;
-            updatePowerBar();
-        } else {
-            clearInterval(chargeInterval);
-            gameState.isCharging = false;
-        }
-    }, 100);
-    
-    // 5秒后停止充电
-    setTimeout(() => {
-        clearInterval(chargeInterval);
-        gameState.isCharging = false;
-    }, 5000);
-}
+
 
 // 发射
 function fire() {
