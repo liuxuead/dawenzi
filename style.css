@@ -97,32 +97,33 @@ html, body {
     .game-container {
         height: 100vh !important;
         min-height: 100vh;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: 0;
         display: flex !important;
         flex-direction: column !important;
     }
     
     .top-section {
-        padding: 5px;
-        gap: 8px;
+        padding: 3px 5px;
+        gap: 5px;
         flex-shrink: 0;
+        height: auto;
     }
     
     .radar {
-        width: 50px;
-        height: 50px;
+        width: 45px;
+        height: 45px;
     }
     
     .power-section {
-        gap: 5px;
+        gap: 3px;
     }
     
     .power-label {
-        font-size: 11px;
+        font-size: 10px;
     }
     
     .power-bar {
-        height: 14px;
+        height: 12px;
     }
     
     .game-area {
@@ -132,39 +133,47 @@ html, body {
     }
     
     .cannon-section {
-        height: 100px;
-        padding-bottom: 5px;
+        height: 80px;
+        padding-bottom: 3px;
         flex-shrink: 0;
     }
     
     .cannon-barrel {
-        height: 16px;
-        max-width: 55px;
+        height: 14px;
+        max-width: 50px;
+    }
+    
+    .cannon-base {
+        width: 100px;
+        height: 35px;
     }
     
     .controls {
-        height: 60px;
-        padding: 5px 10px;
-        gap: 8px;
+        height: 55px;
+        padding: 3px 8px;
+        gap: 6px;
         flex-shrink: 0;
         position: relative;
         z-index: 9999;
+        margin-bottom: 0;
     }
     
     .control-btn {
-        width: 55px;
-        height: 40px;
-        font-size: 14px;
+        width: 50px;
+        height: 35px;
+        font-size: 13px;
+        border-width: 2px;
     }
     
     .arrow-btn {
-        width: 45px;
-        height: 40px;
-        font-size: 18px;
+        width: 40px;
+        height: 35px;
+        font-size: 16px;
+        border-width: 2px;
     }
     
     .arrow-btn.left {
-        margin-right: 40px;
+        margin-right: 35px;
     }
 }
 
