@@ -15,6 +15,7 @@ body {
     width: 100%;
     height: 100vh;
     height: 100dvh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -92,16 +93,19 @@ html, body {
 }
 
 /* 针对v40等小屏幕设备的特殊处理 */
-@media screen and (max-height: 600px) and (max-width: 480px) {
+@media screen and (max-height: 600px), (max-width: 480px) {
     .game-container {
-        height: 100vh;
-        height: 100dvh;
-        padding-bottom: env(safe-area-inset-bottom);
+        height: 100vh !important;
+        min-height: 100vh;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        display: flex !important;
+        flex-direction: column !important;
     }
     
     .top-section {
         padding: 5px;
         gap: 8px;
+        flex-shrink: 0;
     }
     
     .radar {
@@ -121,9 +125,16 @@ html, body {
         height: 14px;
     }
     
+    .game-area {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+    
     .cannon-section {
         height: 100px;
         padding-bottom: 5px;
+        flex-shrink: 0;
     }
     
     .cannon-barrel {
@@ -135,7 +146,9 @@ html, body {
         height: 60px;
         padding: 5px 10px;
         gap: 8px;
-        margin-bottom: 0;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 9999;
     }
     
     .control-btn {

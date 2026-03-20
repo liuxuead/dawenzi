@@ -203,6 +203,13 @@ function rotateCannon(degrees) {
 
 
 
+// 震动效果
+function vibrate(duration = 100) {
+    if (navigator.vibrate) {
+        navigator.vibrate(duration);
+    }
+}
+
 // 发射
 function fire() {
     if (gameState.power < 10) {
@@ -214,6 +221,9 @@ function fire() {
         meizidanSound.onended = resumeBGM;
         return;
     }
+    
+    // 发射时震动
+    vibrate(150);
     
     // 消耗电力
     gameState.power = Math.max(0, gameState.power - 20);
