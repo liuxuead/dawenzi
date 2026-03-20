@@ -14,10 +14,19 @@ html, body {
 
 .game-container {
     width: 100%;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     position: relative;
+    box-sizing: border-box;
+}
+
+/* 确保在移动设备上的兼容性 */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
 }
 
 /* 顶部区域 */
@@ -122,6 +131,7 @@ html, body {
     flex: 1;
     position: relative;
     overflow: hidden;
+    min-height: 0;
 }
 
 /* 轨迹画布 */
@@ -143,6 +153,18 @@ html, body {
     background: #000;
     border-radius: 50%;
     z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 蚊子编号 */
+.mosquito-number {
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1;
 }
 
 /* 炮弹 */
