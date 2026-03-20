@@ -18,6 +18,7 @@ const gameArea = document.getElementById('gameArea');
 const cannonBarrel = document.getElementById('cannonBarrel');
 const gameOverModal = document.getElementById('gameOverModal');
 const restartBtn = document.getElementById('restartBtn');
+const zapperSound = document.getElementById('zapperSound');
 
 // 初始化
 function init() {
@@ -245,6 +246,10 @@ function createBullet() {
                 m.element.style.opacity = '0';
                 hit = true;
                 hitMosquito = m;
+                
+                // 播放电击音效
+                zapperSound.currentTime = 0;
+                zapperSound.play();
             }
         });
         
