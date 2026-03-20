@@ -374,6 +374,9 @@ function createBullet() {
 // 显示游戏结束弹窗
 function showGameOver() {
     gameOverModal.style.display = 'flex';
+    // 停止背景音乐
+    pauseBGM();
+    bgmStarted = false;
 }
 
 // 重新开始游戏
@@ -389,6 +392,10 @@ function restartGame() {
     while (trailSvg.firstChild) {
         trailSvg.removeChild(trailSvg.firstChild);
     }
+    
+    // 重新开始背景音乐
+    bgmStarted = true;
+    resumeBGM();
 }
 
 // 绑定重新开始按钮事件
