@@ -1069,7 +1069,62 @@ function createHomingMissile(target) {
         if (isColliding(missileRect, targetRect)) {
             clearInterval(flyInterval);
             missile.remove();
-            hitMosquito(target);
+            
+            // 移除标记
+            const mark = document.querySelector('.mosquito-mark');
+            if (mark) {
+                mark.remove();
+            }
+            
+            // 检查是否是3号蚊子（有血条）
+            if (target.properties.health) {
+                target.properties.currentHealth -= 50;
+                updateHealthBar(target);
+                
+                pauseBGM();
+                zapperSound.currentTime = 0;
+                zapperSound.play();
+                zapperSound.onended = resumeBGM;
+                
+                if (target.properties.currentHealth <= 0) {
+                    target.element.style.transform = 'scale(1.5)';
+                    target.element.style.opacity = '0';
+                    addScore(target.id);
+                } else {
+                    target.element.style.filter = 'brightness(2)';
+                    setTimeout(() => {
+                        target.element.style.filter = 'brightness(1)';
+                    }, 200);
+                }
+            } else {
+                target.element.style.transform = 'scale(1.5)';
+                target.element.style.opacity = '0';
+                addScore(target.id);
+                
+                pauseBGM();
+                zapperSound.currentTime = 0;
+                zapperSound.play();
+                zapperSound.onended = resumeBGM;
+            }
+            
+            // 延迟移除蚊子
+            setTimeout(() => {
+                if (!target.properties.health || target.properties.currentHealth <= 0) {
+                    target.element.remove();
+                    const index = gameState.mosquitoes.indexOf(target);
+                    if (index > -1) {
+                        gameState.mosquitoes.splice(index, 1);
+                    }
+                    updateRadarDots();
+                    
+                    const aliveMosquitoes = gameState.mosquitoes.filter(m => 
+                        m.element.style.opacity !== '0' && m.element.parentNode
+                    );
+                    if (aliveMosquitoes.length === 0) {
+                        showGameOver();
+                    }
+                }
+            }, 500);
         }
         
         if (currentX < -50 || currentX > window.innerWidth + 50 ||
