@@ -581,9 +581,9 @@ function bindEvents() {
             }
             
             // 检查是否有其他手指在屏幕上
-            if (activeTouches.size > 0) {
+            if (e.touches.length > 0) {
                 // 多指触控模式：发射追踪飞弹
-                console.log('多指触控模式：发射追踪飞弹');
+                console.log('多指触控模式：发射追踪飞弹，剩余手指数:', e.touches.length);
                 
                 // 获取双击手指的位置（最后离开的手指）
                 const doubleTapTouch = e.changedTouches[0];
@@ -592,12 +592,13 @@ function bindEvents() {
                     y: doubleTapTouch.clientY
                 };
                 
-                // 获取已在屏幕上的手指位置
-                let existingTouchPos = null;
-                for (let [id, pos] of activeTouches) {
-                    existingTouchPos = pos;
-                    break;
-                }
+                // 获取仍在屏幕上的手指位置
+                const existingTouchPos = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
+                };
+                
+                console.log('双击位置:', doubleTapPos, '已有手指位置:', existingTouchPos);
                 
                 if (existingTouchPos) {
                     // 找出离两只手指连线最近的蚊子
