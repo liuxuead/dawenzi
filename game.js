@@ -212,7 +212,11 @@ function updateRadarDots() {
     const existingDots = radar.querySelectorAll('.radar-dot');
     existingDots.forEach(dot => dot.remove());
     
+    // 只显示活着的蚊子
     gameState.mosquitoes.forEach(m => {
+        // 跳过已消失或已移除的蚊子
+        if (m.element.style.opacity === '0' || !m.element.parentNode) return;
+        
         const dot = document.createElement('div');
         dot.className = 'radar-dot';
         dot.style.left = (m.x / 100 * 80 + 10) + '%';
@@ -225,12 +229,29 @@ function updateRadarDots() {
 function startMosquitoMovement() {
     setInterval(() => {
         gameState.mosquitoes.forEach(m => {
+            // 跳过已消失的蚊子
+            if (m.element.style.opacity === '0') return;
+            
             m.x += m.vx;
             m.y += m.vy;
             
-            // 边界检测
-            if (m.x < 5 || m.x > 90) m.vx *= -1;
-            if (m.y < 5 || m.y > 70) m.vy *= -1;
+            // 边界检测，确保蚊子在可见范围内
+            if (m.x < 5) {
+                m.x = 5;
+                m.vx *= -1;
+            }
+            if (m.x > 90) {
+                m.x = 90;
+                m.vx *= -1;
+            }
+            if (m.y < 5) {
+                m.y = 5;
+                m.vy *= -1;
+            }
+            if (m.y > 70) {
+                m.y = 70;
+                m.vy *= -1;
+            }
             
             m.element.style.left = m.x + '%';
             m.element.style.top = m.y + '%';
@@ -296,10 +317,13 @@ function cloneMosquito(originalMosquito) {
     
     // 3秒后消失
     setTimeout(() => {
-        clone.remove();
+        if (clone && clone.parentNode) {
+            clone.remove();
+        }
         const index = gameState.mosquitoes.findIndex(m => m.element === clone);
         if (index > -1) {
             gameState.mosquitoes.splice(index, 1);
+            updateRadarDots();
         }
     }, 3000);
 }
@@ -606,8 +630,11 @@ function createBullet() {
                     }
                     updateRadarDots();
                     
-                    // 检查是否所有蚊子都被消灭
-                    if (gameState.mosquitoes.length === 0) {
+                    // 检查是否所有蚊子都被消灭（只计算活着的蚊子）
+                    const aliveMosquitoes = gameState.mosquitoes.filter(m => 
+                        m.element.style.opacity !== '0' && m.element.parentNode
+                    );
+                    if (aliveMosquitoes.length === 0) {
                         showGameOver();
                     }
                 }
