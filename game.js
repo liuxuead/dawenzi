@@ -594,7 +594,7 @@ function bindEvents() {
             return;
         }
         const now = Date.now();
-        console.log('时间差:', now - lastTapTime, 'ms, 点击次数:', tapCount);
+        console.log('时间差:', now - lastTapTime, 'ms');
         
         // 双击检测：300ms内两次点击
         if (now - lastTapTime < 300) {
