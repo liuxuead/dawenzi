@@ -403,6 +403,7 @@ let lastClickTime = 0;
 let bgmStarted = false;
 let lastFireTime = 0;
 let lastTapTime = 0;
+let lastCannonTapTime = 0;
 let touchStartX = 0;
 let touchStartY = 0;
 
@@ -483,10 +484,41 @@ function bindEvents() {
         touchStartY = touch.clientY;
     }, { passive: false });
     
+    // 双击炮筒区域充电（绿色按钮功能）
+    const cannonSection = document.querySelector('.cannon-section');
+    if (cannonSection) {
+        cannonSection.addEventListener('touchend', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡，确保充电优先级更高
+            const now = Date.now();
+            
+            // 双击检测：300ms内两次点击
+            if (now - lastCannonTapTime < 300) {
+                startBGMOnFirstInteraction();
+                setActiveButton('green');
+                
+                // 根据点击间隔调整充电量：点击越快，充电越多
+                const currentTime = Date.now();
+                const clickInterval = currentTime - lastClickTime;
+                lastClickTime = currentTime;
+                
+                let chargeAmount = 5; // 默认充电量
+                if (clickInterval < 300) chargeAmount = 15; // 快速点击
+                else if (clickInterval < 600) chargeAmount = 10; // 中等速度点击
+                
+                gameState.power = Math.min(gameState.power + chargeAmount, gameState.maxPower);
+                updatePowerBar();
+                
+                // 充电时震动
+                vibrate(50);
+            }
+            lastCannonTapTime = now;
+        });
+    }
+    
     // 双击屏幕发射（全屏有效，排除按钮）
     document.addEventListener('touchend', (e) => {
-        // 排除按钮区域
-        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
+        // 排除按钮区域和炮筒区域（炮筒区域有单独的双击事件）
+        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
             return;
         }
         const now = Date.now();
@@ -774,7 +806,7 @@ function showGameOver() {
 // 重新开始游戏
 function restartGame() {
     gameOverModal.style.display = 'none';
-    gameState.power = gameState.maxPower;
+    // 不补满电力
     gameState.cannonAngle = -90;
     gameState.level++; // 等级提升
     gameState.playerHealth = gameState.maxPlayerHealth; // 恢复血量
