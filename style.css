@@ -77,10 +77,12 @@ html, body {
     
     .arrow-btn.left::before {
         border-width: 11px 15px 11px 0;
+        border-color: transparent #fff transparent transparent;
     }
     
     .arrow-btn.right::before {
         border-width: 11px 0 11px 15px;
+        border-color: transparent transparent transparent #fff;
     }
     
     /* 蚊子大小调整 */
@@ -172,10 +174,12 @@ html, body {
     
     .arrow-btn.left::before {
         border-width: 10px 14px 10px 0;
+        border-color: transparent #fff transparent transparent;
     }
     
     .arrow-btn.right::before {
         border-width: 10px 0 10px 14px;
+        border-color: transparent transparent transparent #fff;
     }
     
     .arrow-btn.left {
@@ -495,13 +499,13 @@ html, body {
 
 .arrow-btn.left::before {
     border-width: 12px 16px 12px 0;
-    border-color: transparent #333 transparent transparent;
+    border-color: transparent #fff transparent transparent;
     margin-left: -4px;
 }
 
 .arrow-btn.right::before {
     border-width: 12px 0 12px 16px;
-    border-color: transparent transparent transparent #333;
+    border-color: transparent transparent transparent #fff;
     margin-left: 4px;
 }
 

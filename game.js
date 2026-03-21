@@ -205,8 +205,10 @@ function rotateCannon(degrees) {
 
 // 震动效果
 function vibrate(duration = 100) {
-    if (navigator.vibrate) {
+    if ('vibrate' in navigator) {
         navigator.vibrate(duration);
+    } else if ('webkitVibrate' in navigator) {
+        navigator.webkitVibrate(duration);
     }
 }
 
