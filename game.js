@@ -408,6 +408,7 @@ let touchStartX = 0;
 let touchStartY = 0;
 let isTouching = false; // 标记手指是否在屏幕上
 let activeTouches = new Map(); // 存储当前活跃的手指
+let firstTouchPos = null; // 记录第一次手指落点位置
 
 // 绑定事件
 function bindEvents() {
@@ -467,30 +468,21 @@ function bindEvents() {
         // 记录所有手指
         for (let i = 0; i < e.touches.length; i++) {
             const touch = e.touches[i];
-            const existingTouch = activeTouches.get(touch.identifier);
-            if (existingTouch) {
-                // 手指已存在，更新位置
-                existingTouch.x = touch.clientX;
-                existingTouch.y = touch.clientY;
-            } else {
-                // 新手指，记录初始位置和当前位置
-                activeTouches.set(touch.identifier, {
-                    x: touch.clientX,
-                    y: touch.clientY,
-                    startX: touch.clientX,
-                    startY: touch.clientY,
-                    hasMoved: false
-                });
-            }
+            activeTouches.set(touch.identifier, {
+                x: touch.clientX,
+                y: touch.clientY
+            });
         }
         
         isTouching = true; // 标记手指在屏幕上
         
-        // 取第一个触摸点用于滑动
-        if (e.touches.length > 0) {
-            const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
+        // 记录第一次手指落点
+        if (!firstTouchPos && e.touches.length > 0) {
+            firstTouchPos = {
+                x: e.touches[0].clientX,
+                y: e.touches[0].clientY
+            };
+            console.log('第一次落点:', firstTouchPos);
         }
     }, { passive: true });
     
@@ -504,18 +496,10 @@ function bindEvents() {
         // 更新手指位置
         for (let i = 0; i < e.touches.length; i++) {
             const touch = e.touches[i];
-            const touchData = activeTouches.get(touch.identifier);
-            if (touchData) {
-                touchData.x = touch.clientX;
-                touchData.y = touch.clientY;
-                
-                // 检测是否滑动过（移动超过10像素）
-                const dx = touch.clientX - touchData.startX;
-                const dy = touch.clientY - touchData.startY;
-                if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
-                    touchData.hasMoved = true;
-                }
-            }
+            activeTouches.set(touch.identifier, {
+                x: touch.clientX,
+                y: touch.clientY
+            });
         }
         
         e.preventDefault();
