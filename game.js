@@ -656,6 +656,9 @@ function bindEvents() {
                     // 标记蚊子
                     markMosquito(closestMosquito);
                     
+                    // 更新最后发射时间
+                    lastFireTime = now;
+                    
                     // 发射追踪飞弹
                     setTimeout(() => {
                         createHomingMissile(closestMosquito);
