@@ -766,6 +766,9 @@ function showGameOver() {
     // 停止背景音乐
     pauseBGM();
     bgmStarted = false;
+    // 清除音效结束回调，防止重新播放背景音乐
+    zapperSound.onended = null;
+    meizidanSound.onended = null;
     // 保存最高分数
     saveHighScore();
 }
