@@ -1025,8 +1025,8 @@ function createHomingMissile(target) {
     missile.style.position = 'absolute';
     missile.style.left = startX + 'px';
     missile.style.top = startY + 'px';
-    missile.style.width = '10px';
-    missile.style.height = '4px';
+    missile.style.width = '15px';
+    missile.style.height = '6px';
     missile.style.background = 'linear-gradient(90deg, #ff6b6b, #ff8e53)';
     missile.style.borderRadius = '2px';
     missile.style.zIndex = '999';
@@ -1037,8 +1037,8 @@ function createHomingMissile(target) {
     let currentX = startX;
     let currentY = startY;
     let angle = 0;
-    let speed = 10;
-    let turningRate = 0.05;
+    let speed = 6;
+    let turningRate = 0.1;
     
     const flyInterval = setInterval(() => {
         if (!target || target.element.style.opacity === '0') {
@@ -1077,7 +1077,7 @@ function createHomingMissile(target) {
             clearInterval(flyInterval);
             missile.remove();
         }
-    }, 20);
+    }, 10);
 }
 
 // 绑定重新开始按钮事件
