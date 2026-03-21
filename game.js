@@ -487,7 +487,7 @@ function bindEvents() {
         // 更新调试显示
         const debugInfo = document.getElementById('debugInfo');
         if (debugInfo) {
-            debugInfo.textContent = '等待双指...';
+            debugInfo.textContent = '';
         }
     }, { passive: true });
     
@@ -577,17 +577,33 @@ function bindEvents() {
         // 更新调试显示
         const debugInfo = document.getElementById('debugInfo');
         if (debugInfo) {
-            if (distance > 0) {
-                debugInfo.textContent = `距离: ${distance.toFixed(0)}px`;
-            } else {
-                debugInfo.textContent = '等待双指...';
-            }
+            debugInfo.textContent = '';
         }
         
-        // 多指模式：距离>150px发射追踪飞弹（暂时只显示距离，不发射）
+        // 多指模式：距离>150px发射追踪飞弹
         if (distance > 150) {
-            console.log('距离超过150px，准备发射追踪飞弹，距离:', distance);
-            // 第三步再添加发射逻辑
+            console.log('距离超过150px，发射追踪飞弹，距离:', distance);
+            
+            // 防抖动：300ms内只能发射一次
+            if (now - lastFireTime < 300) {
+                return;
+            }
+            
+            // 找出离两只手指连线最近的蚊子
+            const closestMosquito = findClosestMosquitoToLine(firstTouchPos, leavingPos);
+            
+            if (closestMosquito) {
+                // 标记蚊子
+                markMosquito(closestMosquito);
+                
+                // 更新最后发射时间
+                lastFireTime = now;
+                
+                // 发射追踪飞弹
+                setTimeout(() => {
+                    createHomingMissile(closestMosquito);
+                }, 300);
+            }
         }
         
         // 单指双击模式：普通发射（保持原逻辑不变）
@@ -891,6 +907,154 @@ function restartGame() {
     // 重新开始背景音乐
     bgmStarted = true;
     resumeBGM();
+}
+
+// 计算点到线段的距离
+function distanceToLineSegment(point, lineStart, lineEnd) {
+    const A = point.x - lineStart.x;
+    const B = point.y - lineStart.y;
+    const C = lineEnd.x - lineStart.x;
+    const D = lineEnd.y - lineStart.y;
+    
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = -1;
+    
+    if (lenSq !== 0) param = dot / lenSq;
+    
+    let xx, yy;
+    if (param < 0) {
+        xx = lineStart.x; yy = lineStart.y;
+    } else if (param > 1) {
+        xx = lineEnd.x; yy = lineEnd.y;
+    } else {
+        xx = lineStart.x + param * C;
+        yy = lineStart.y + param * D;
+    }
+    
+    const dx = point.x - xx;
+    const dy = point.y - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+// 找出离线段最近的蚊子
+function findClosestMosquitoToLine(lineStart, lineEnd) {
+    let closestMosquito = null;
+    let minDistance = Infinity;
+    
+    gameState.mosquitoes.forEach(mosquito => {
+        if (mosquito.element.style.opacity === '0') return;
+        
+        const rect = mosquito.element.getBoundingClientRect();
+        const mosquitoPos = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        };
+        
+        const distance = distanceToLineSegment(mosquitoPos, lineStart, lineEnd);
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestMosquito = mosquito;
+        }
+    });
+    
+    return closestMosquito;
+}
+
+// 标记蚊子
+function markMosquito(mosquito) {
+    const existingMark = document.querySelector('.mosquito-mark');
+    if (existingMark) {
+        existingMark.remove();
+    }
+    
+    const rect = mosquito.element.getBoundingClientRect();
+    
+    const mark = document.createElement('div');
+    mark.className = 'mosquito-mark';
+    mark.style.position = 'absolute';
+    mark.style.left = rect.left + 'px';
+    mark.style.top = rect.top + 'px';
+    mark.style.width = '30px';
+    mark.style.height = '30px';
+    mark.style.backgroundImage = 'url(mz.png)';
+    mark.style.backgroundSize = 'contain';
+    mark.style.backgroundRepeat = 'no-repeat';
+    mark.style.zIndex = '999';
+    mark.style.pointerEvents = 'none';
+    
+    document.body.appendChild(mark);
+}
+
+// 创建追踪飞弹
+function createHomingMissile(target) {
+    if (!target) return;
+    
+    const cannonBase = document.querySelector('.cannon-base');
+    const cannonRect = cannonBase.getBoundingClientRect();
+    
+    const startX = cannonRect.left - 30;
+    const startY = cannonRect.top + cannonRect.height / 2;
+    
+    const missile = document.createElement('div');
+    missile.className = 'homing-missile';
+    missile.style.position = 'absolute';
+    missile.style.left = startX + 'px';
+    missile.style.top = startY + 'px';
+    missile.style.width = '10px';
+    missile.style.height = '4px';
+    missile.style.background = 'linear-gradient(90deg, #ff6b6b, #ff8e53)';
+    missile.style.borderRadius = '2px';
+    missile.style.zIndex = '999';
+    missile.style.pointerEvents = 'none';
+    
+    document.body.appendChild(missile);
+    
+    let currentX = startX;
+    let currentY = startY;
+    let angle = 0;
+    let speed = 10;
+    let turningRate = 0.05;
+    
+    const flyInterval = setInterval(() => {
+        if (!target || target.element.style.opacity === '0') {
+            clearInterval(flyInterval);
+            missile.remove();
+            return;
+        }
+        
+        const targetRect = target.element.getBoundingClientRect();
+        const targetX = targetRect.left + targetRect.width / 2;
+        const targetY = targetRect.top + targetRect.height / 2;
+        
+        const dx = targetX - currentX;
+        const dy = targetY - currentY;
+        const targetAngle = Math.atan2(dy, dx);
+        
+        angle += (targetAngle - angle) * turningRate;
+        
+        currentX += Math.cos(angle) * speed;
+        currentY += Math.sin(angle) * speed;
+        
+        missile.style.left = currentX + 'px';
+        missile.style.top = currentY + 'px';
+        missile.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
+        
+        const missileRect = missile.getBoundingClientRect();
+        
+        if (isColliding(missileRect, targetRect)) {
+            clearInterval(flyInterval);
+            missile.remove();
+            hitMosquito(target);
+        }
+        
+        if (currentX < -50 || currentX > window.innerWidth + 50 ||
+            currentY < -50 || currentY > window.innerHeight + 50) {
+            clearInterval(flyInterval);
+            missile.remove();
+        }
+    }, 20);
 }
 
 // 绑定重新开始按钮事件
