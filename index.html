@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="game-container">
-        <!-- 顶部区域：雷达和电力条 -->
+        <!-- 顶部区域：雷达、等级分数、HP电力 -->
         <div class="top-section">
             <div class="radar" id="radar">
                 <div class="radar-circle"></div>
@@ -17,10 +17,30 @@
                     <div class="radar-line vertical"></div>
                 </div>
             </div>
-            <div class="power-section">
-                <span class="power-label">电力</span>
-                <div class="power-bar">
-                    <div class="power-fill" id="powerFill"></div>
+            <div class="top-info">
+                <div class="level-section">
+                    <span class="info-label">等级</span>
+                    <span class="level-value" id="levelValue">1</span>
+                </div>
+                <div class="score-section">
+                    <span class="info-label">分数</span>
+                    <span class="score-value" id="scoreValue">0</span>
+                    <span class="score-separator">/</span>
+                    <span class="high-score-value" id="highScoreValue">0</span>
+                </div>
+            </div>
+            <div class="player-status">
+                <div class="player-health-section">
+                    <span class="status-label">HP</span>
+                    <div class="player-health-bar">
+                        <div class="player-health-fill" id="playerHealthFill"></div>
+                    </div>
+                </div>
+                <div class="power-section">
+                    <span class="status-label">电力</span>
+                    <div class="power-bar">
+                        <div class="power-fill" id="powerFill"></div>
+                    </div>
                 </div>
             </div>
         </div>
