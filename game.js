@@ -487,7 +487,7 @@ function bindEvents() {
         // 更新调试显示
         const debugInfo = document.getElementById('debugInfo');
         if (debugInfo) {
-            debugInfo.textContent = `手指数: ${activeTouches.size} | 落点: ${firstTouchPos ? firstTouchPos.x.toFixed(0) + ',' + firstTouchPos.y.toFixed(0) : '-'}`;
+            debugInfo.textContent = '等待双指...';
         }
     }, { passive: true });
     
