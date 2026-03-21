@@ -548,6 +548,22 @@ function bindEvents() {
         }
         const now = Date.now();
         
+        // 获取离开的手指位置
+        const leavingTouch = e.changedTouches[0];
+        const leavingPos = {
+            x: leavingTouch.clientX,
+            y: leavingTouch.clientY
+        };
+        
+        // 检查是否有多指触控（还有其他手指在屏幕上）
+        let distance = 0;
+        if (e.touches.length > 0 && firstTouchPos) {
+            // 计算两指距离
+            const dx = leavingPos.x - firstTouchPos.x;
+            const dy = leavingPos.y - firstTouchPos.y;
+            distance = Math.sqrt(dx * dx + dy * dy);
+        }
+        
         // 移除离开的手指
         for (let i = 0; i < e.changedTouches.length; i++) {
             activeTouches.delete(e.changedTouches[i].identifier);
@@ -561,10 +577,17 @@ function bindEvents() {
         // 更新调试显示
         const debugInfo = document.getElementById('debugInfo');
         if (debugInfo) {
-            debugInfo.textContent = `手指数: ${activeTouches.size} | 落点: ${firstTouchPos ? firstTouchPos.x.toFixed(0) + ',' + firstTouchPos.y.toFixed(0) : '-'}`;
+            const distText = distance > 0 ? ` | 距离: ${distance.toFixed(0)}px` : '';
+            debugInfo.textContent = `手指数: ${activeTouches.size} | 落点: ${firstTouchPos ? firstTouchPos.x.toFixed(0) + ',' + firstTouchPos.y.toFixed(0) : '-'}${distText}`;
         }
         
-        // 双击检测：300ms内两次点击
+        // 多指模式：距离>150px发射追踪飞弹（暂时只显示距离，不发射）
+        if (distance > 150) {
+            console.log('距离超过150px，准备发射追踪飞弹，距离:', distance);
+            // 第三步再添加发射逻辑
+        }
+        
+        // 单指双击模式：普通发射（保持原逻辑不变）
         if (now - lastTapTime < 300) {
             // 防抖动：300ms内只能发射一次
             if (now - lastFireTime < 300) {
