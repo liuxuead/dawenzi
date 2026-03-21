@@ -406,9 +406,8 @@ let lastTapTime = 0;
 let lastCannonTapTime = 0;
 let touchStartX = 0;
 let touchStartY = 0;
-let isTouching = false; // 标记手指是否在屏幕上
-let activeTouches = new Map(); // 存储当前活跃的手指
 let firstTouchPos = null; // 记录第一次手指落点位置
+let activeTouches = new Map(); // 存储当前活跃的手指
 
 // 绑定事件
 function bindEvents() {
@@ -464,17 +463,18 @@ function bindEvents() {
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
             return;
         }
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
         
         // 记录所有手指
         for (let i = 0; i < e.touches.length; i++) {
-            const touch = e.touches[i];
-            activeTouches.set(touch.identifier, {
-                x: touch.clientX,
-                y: touch.clientY
+            const t = e.touches[i];
+            activeTouches.set(t.identifier, {
+                x: t.clientX,
+                y: t.clientY
             });
         }
-        
-        isTouching = true; // 标记手指在屏幕上
         
         // 记录第一次手指落点
         if (!firstTouchPos && e.touches.length > 0) {
@@ -482,60 +482,32 @@ function bindEvents() {
                 x: e.touches[0].clientX,
                 y: e.touches[0].clientY
             };
-            console.log('第一次落点:', firstTouchPos);
+        }
+        
+        // 更新调试显示
+        const debugInfo = document.getElementById('debugInfo');
+        if (debugInfo) {
+            debugInfo.textContent = `手指数: ${activeTouches.size} | 落点: ${firstTouchPos ? firstTouchPos.x.toFixed(0) + ',' + firstTouchPos.y.toFixed(0) : '-'}`;
         }
     }, { passive: true });
     
-    // 监听所有手指移动
     document.addEventListener('touchmove', (e) => {
         // 排除按钮区域
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
             return;
         }
-        
-        // 更新手指位置
-        for (let i = 0; i < e.touches.length; i++) {
-            const touch = e.touches[i];
-            activeTouches.set(touch.identifier, {
-                x: touch.clientX,
-                y: touch.clientY
-            });
-        }
-        
         e.preventDefault();
-        if (e.touches.length > 0) {
-            const touch = e.touches[0];
-            const deltaX = touch.clientX - touchStartX;
-            const deltaY = touch.clientY - touchStartY;
-            
-            // 计算角度变化（提高灵敏度）
-            const angleChange = deltaX * 0.8;
-            rotateCannon(angleChange);
-            
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-        }
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = touch.clientY - touchStartY;
+        
+        // 计算角度变化（提高灵敏度）
+        const angleChange = deltaX * 0.8;
+        rotateCannon(angleChange);
+        
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
     }, { passive: false });
-    
-    // 监听所有手指离开屏幕的事件
-    document.addEventListener('touchend', (e) => {
-        // 移除离开的手指
-        for (let i = 0; i < e.changedTouches.length; i++) {
-            activeTouches.delete(e.changedTouches[i].identifier);
-        }
-        
-        // 检查是否还有手指在屏幕上
-        isTouching = activeTouches.size > 0;
-    });
-    
-    document.addEventListener('touchcancel', (e) => {
-        // 移除取消的手指
-        for (let i = 0; i < e.changedTouches.length; i++) {
-            activeTouches.delete(e.changedTouches[i].identifier);
-        }
-        
-        isTouching = activeTouches.size > 0;
-    });
     
     // 双击炮筒区域充电（绿色按钮功能）
     const cannonSection = document.querySelector('.cannon-section');
@@ -568,17 +540,29 @@ function bindEvents() {
         });
     }
     
-    // 三击屏幕发射（全屏有效，排除按钮）
+    // 双击屏幕发射（全屏有效，排除按钮）
     document.addEventListener('touchend', (e) => {
-        console.log('touchend 触发，e.touches.length=', e.touches.length, 'e.changedTouches.length=', e.changedTouches.length);
-        
         // 排除按钮区域和炮筒区域（炮筒区域有单独的双击事件）
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
-            console.log('被排除区域阻止');
             return;
         }
         const now = Date.now();
-        console.log('时间差:', now - lastTapTime, 'ms');
+        
+        // 移除离开的手指
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            activeTouches.delete(e.changedTouches[i].identifier);
+        }
+        
+        // 如果没有手指在屏幕上，重置第一次落点
+        if (e.touches.length === 0) {
+            firstTouchPos = null;
+        }
+        
+        // 更新调试显示
+        const debugInfo = document.getElementById('debugInfo');
+        if (debugInfo) {
+            debugInfo.textContent = `手指数: ${activeTouches.size} | 落点: ${firstTouchPos ? firstTouchPos.x.toFixed(0) + ',' + firstTouchPos.y.toFixed(0) : '-'}`;
+        }
         
         // 双击检测：300ms内两次点击
         if (now - lastTapTime < 300) {
@@ -586,76 +570,10 @@ function bindEvents() {
             if (now - lastFireTime < 300) {
                 return;
             }
+            lastFireTime = now;
             
-            // 检查是否有其他手指在屏幕上
-            if (e.touches.length > 0) {
-                // 多指触控模式：检测是否有滑动
-                console.log('多指触控模式，剩余手指数:', e.touches.length);
-                
-                // 检查是否有手指滑动过
-                let hasSlidingTouch = false;
-                let stationaryTouchPos = null;
-                
-                for (let [id, touchData] of activeTouches) {
-                    if (touchData.hasMoved) {
-                        hasSlidingTouch = true;
-                        console.log('检测到滑动的手指:', id);
-                    } else {
-                        // 记录没有滑动的手指位置（按住不动的手指）
-                        stationaryTouchPos = {
-                            x: touchData.x,
-                            y: touchData.y
-                        };
-                        console.log('按住不动的手指位置:', stationaryTouchPos);
-                    }
-                }
-                
-                if (!hasSlidingTouch || !stationaryTouchPos) {
-                    // 没有滑动或没有按住不动的手指，使用普通发射
-                    console.log('没有满足追踪条件，使用普通发射');
-                    lastFireTime = now;
-                    startBGMOnFirstInteraction();
-                    fire();
-                    return;
-                }
-                
-                // 满足条件：一只手指按住不动，另一只手指滑动，发射追踪飞弹
-                console.log('满足追踪条件，发射追踪飞弹');
-                
-                // 获取双击手指的位置（最后离开的手指）
-                const doubleTapTouch = e.changedTouches[0];
-                const doubleTapPos = {
-                    x: doubleTapTouch.clientX,
-                    y: doubleTapTouch.clientY
-                };
-                
-                console.log('双击位置:', doubleTapPos, '按住位置:', stationaryTouchPos);
-                
-                // 找出离两只手指连线最近的蚊子
-                const closestMosquito = findClosestMosquitoToLine(stationaryTouchPos, doubleTapPos);
-                
-                console.log('最近的蚊子:', closestMosquito);
-                
-                if (closestMosquito) {
-                    // 标记蚊子
-                    markMosquito(closestMosquito);
-                    
-                    // 更新最后发射时间
-                    lastFireTime = now;
-                    
-                    // 发射追踪飞弹
-                    setTimeout(() => {
-                        createHomingMissile(closestMosquito);
-                    }, 300);
-                }
-            } else {
-                // 单指双击模式：普通发射（保持原逻辑不变）
-                console.log('单指双击模式：普通发射');
-                lastFireTime = now;
-                
-                startBGMOnFirstInteraction();
-                fire();
-            }
+            startBGMOnFirstInteraction();
+            fire();
         }
         lastTapTime = now;
     });
@@ -703,190 +621,6 @@ function vibrate(duration = 100) {
     } else if ('webkitVibrate' in navigator) {
         navigator.webkitVibrate(duration);
     }
-}
-
-// 计算点到线段的距离
-function distanceToLineSegment(point, lineStart, lineEnd) {
-    const A = point.x - lineStart.x;
-    const B = point.y - lineStart.y;
-    const C = lineEnd.x - lineStart.x;
-    const D = lineEnd.y - lineStart.y;
-    
-    const dot = A * C + B * D;
-    const lenSq = C * C + D * D;
-    let param = -1;
-    
-    if (lenSq !== 0) {
-        param = dot / lenSq;
-    }
-    
-    let xx, yy;
-    
-    if (param < 0) {
-        xx = lineStart.x;
-        yy = lineStart.y;
-    } else if (param > 1) {
-        xx = lineEnd.x;
-        yy = lineEnd.y;
-    } else {
-        xx = lineStart.x + param * C;
-        yy = lineStart.y + param * D;
-    }
-    
-    const dx = point.x - xx;
-    const dy = point.y - yy;
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
-// 找出离线段最近的蚊子
-function findClosestMosquitoToLine(lineStart, lineEnd) {
-    const mosquitoes = document.querySelectorAll('.mosquito');
-    let closestMosquito = null;
-    let minDistance = Infinity;
-    
-    mosquitoes.forEach(mosquito => {
-        if (mosquito.style.opacity === '0' || !mosquito.isAlive) {
-            return;
-        }
-        
-        const rect = mosquito.getBoundingClientRect();
-        const mosquitoCenter = {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2
-        };
-        
-        const distance = distanceToLineSegment(mosquitoCenter, lineStart, lineEnd);
-        
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestMosquito = mosquito;
-        }
-    });
-    
-    return closestMosquito;
-}
-
-// 标记蚊子
-function markMosquito(mosquito) {
-    // 移除之前的标记
-    const existingMark = document.querySelector('.mosquito-mark');
-    if (existingMark) {
-        existingMark.remove();
-    }
-    
-    if (!mosquito) return;
-    
-    const rect = mosquito.getBoundingClientRect();
-    const mark = document.createElement('div');
-    mark.className = 'mosquito-mark';
-    mark.style.position = 'absolute';
-    mark.style.left = (rect.left - 10) + 'px';
-    mark.style.top = (rect.top - 10) + 'px';
-    mark.style.width = (rect.width + 20) + 'px';
-    mark.style.height = (rect.height + 20) + 'px';
-    mark.style.background = 'url("mz.png") no-repeat center center';
-    mark.style.backgroundSize = 'contain';
-    mark.style.zIndex = '1000';
-    mark.style.pointerEvents = 'none';
-    
-    document.body.appendChild(mark);
-    
-    return mark;
-}
-
-// 创建追踪飞弹
-function createHomingMissile(target) {
-    if (!target) return;
-    
-    // 移除之前的标记
-    const existingMark = document.querySelector('.mosquito-mark');
-    if (existingMark) {
-        existingMark.remove();
-    }
-    
-    const cannonBase = document.querySelector('.cannon-base');
-    const cannonRect = cannonBase.getBoundingClientRect();
-    
-    // 从炮台左侧发射
-    const startX = cannonRect.left - 30;
-    const startY = cannonRect.top + cannonRect.height / 2;
-    
-    const missile = document.createElement('div');
-    missile.className = 'homing-missile';
-    missile.style.position = 'absolute';
-    missile.style.left = startX + 'px';
-    missile.style.top = startY + 'px';
-    missile.style.width = '10px';
-    missile.style.height = '4px';
-    missile.style.background = 'linear-gradient(90deg, #ff6b6b, #ff8e53)';
-    missile.style.borderRadius = '2px';
-    missile.style.zIndex = '999';
-    missile.style.pointerEvents = 'none';
-    
-    document.body.appendChild(missile);
-    
-    // 飞弹参数
-    let currentX = startX;
-    let currentY = startY;
-    let angle = 0;
-    let speed = 10;
-    let turningRate = 0.05; // 转弯速度
-    
-    const flyInterval = setInterval(() => {
-        // 检查目标是否存在
-        if (!target || target.style.opacity === '0' || !target.isAlive) {
-            clearInterval(flyInterval);
-            missile.remove();
-            return;
-        }
-        
-        // 获取目标位置
-        const targetRect = target.getBoundingClientRect();
-        const targetX = targetRect.left + targetRect.width / 2;
-        const targetY = targetRect.top + targetRect.height / 2;
-        
-        // 计算目标方向
-        const dx = targetX - currentX;
-        const dy = targetY - currentY;
-        const targetAngle = Math.atan2(dy, dx);
-        
-        // 平滑转向
-        angle += (targetAngle - angle) * turningRate;
-        
-        // 更新位置
-        currentX += Math.cos(angle) * speed;
-        currentY += Math.sin(angle) * speed;
-        
-        // 更新飞弹位置和旋转
-        missile.style.left = currentX + 'px';
-        missile.style.top = currentY + 'px';
-        missile.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
-        
-        // 检查是否击中目标
-        const missileRect = missile.getBoundingClientRect();
-        if (isColliding(missileRect, targetRect)) {
-            clearInterval(flyInterval);
-            missile.remove();
-            
-            // 击中效果
-            hitMosquito(target);
-        }
-        
-        // 检查是否飞出屏幕
-        if (currentX < -50 || currentX > window.innerWidth + 50 ||
-            currentY < -50 || currentY > window.innerHeight + 50) {
-            clearInterval(flyInterval);
-            missile.remove();
-        }
-    }, 20);
-}
-
-// 检查碰撞
-function isColliding(rect1, rect2) {
-    return !(rect1.right < rect2.left || 
-             rect1.left > rect2.right || 
-             rect1.bottom < rect2.top || 
-             rect1.top > rect2.bottom);
 }
 
 // 发射
