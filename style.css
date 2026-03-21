@@ -82,7 +82,7 @@ html, body {
     /* 炮筒调整 */
     .cannon-barrel {
         width: 46.875vw;
-        max-width: 112.5px;
+        max-width: 84px;
         height: 16px;
     }
     
