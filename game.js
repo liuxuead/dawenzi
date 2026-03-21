@@ -985,6 +985,21 @@ function markMosquito(mosquito) {
     mark.style.pointerEvents = 'none';
     
     document.body.appendChild(mark);
+    
+    // 持续更新标记位置
+    const updateInterval = setInterval(() => {
+        if (!mosquito || mosquito.element.style.opacity === '0' || !document.body.contains(mosquito.element)) {
+            clearInterval(updateInterval);
+            if (mark.parentNode) {
+                mark.remove();
+            }
+            return;
+        }
+        
+        const newRect = mosquito.element.getBoundingClientRect();
+        mark.style.left = newRect.left + 'px';
+        mark.style.top = newRect.top + 'px';
+    }, 16);
 }
 
 // 创建追踪飞弹
