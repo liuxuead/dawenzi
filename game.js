@@ -577,8 +577,11 @@ function bindEvents() {
         // 更新调试显示
         const debugInfo = document.getElementById('debugInfo');
         if (debugInfo) {
-            const distText = distance > 0 ? ` | 距离: ${distance.toFixed(0)}px` : '';
-            debugInfo.textContent = `手指数: ${activeTouches.size} | 落点: ${firstTouchPos ? firstTouchPos.x.toFixed(0) + ',' + firstTouchPos.y.toFixed(0) : '-'}${distText}`;
+            if (distance > 0) {
+                debugInfo.textContent = `距离: ${distance.toFixed(0)}px`;
+            } else {
+                debugInfo.textContent = '等待双指...';
+            }
         }
         
         // 多指模式：距离>150px发射追踪飞弹（暂时只显示距离，不发射）
