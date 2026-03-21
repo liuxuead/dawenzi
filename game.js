@@ -1078,7 +1078,7 @@ function createHomingMissile(target) {
             
             // 检查是否是3号蚊子（有血条）
             if (target.properties.health) {
-                target.properties.currentHealth -= 50;
+                target.properties.currentHealth = 0;
                 updateHealthBar(target);
                 
                 pauseBGM();
@@ -1086,16 +1086,9 @@ function createHomingMissile(target) {
                 zapperSound.play();
                 zapperSound.onended = resumeBGM;
                 
-                if (target.properties.currentHealth <= 0) {
-                    target.element.style.transform = 'scale(1.5)';
-                    target.element.style.opacity = '0';
-                    addScore(target.id);
-                } else {
-                    target.element.style.filter = 'brightness(2)';
-                    setTimeout(() => {
-                        target.element.style.filter = 'brightness(1)';
-                    }, 200);
-                }
+                target.element.style.transform = 'scale(1.5)';
+                target.element.style.opacity = '0';
+                addScore(target.id);
             } else {
                 target.element.style.transform = 'scale(1.5)';
                 target.element.style.opacity = '0';
