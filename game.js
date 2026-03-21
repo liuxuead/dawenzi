@@ -567,16 +567,22 @@ function bindEvents() {
     
     // 双击屏幕发射（全屏有效，排除按钮）
     document.addEventListener('touchend', (e) => {
+        console.log('touchend 触发，e.touches.length=', e.touches.length, 'e.changedTouches.length=', e.changedTouches.length);
+        
         // 排除按钮区域和炮筒区域（炮筒区域有单独的双击事件）
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
+            console.log('被排除区域阻止');
             return;
         }
         const now = Date.now();
+        console.log('时间差:', now - lastTapTime, 'ms, lastFireTime:', now - lastFireTime, 'ms');
         
         // 双击检测：300ms内两次点击
         if (now - lastTapTime < 300) {
+            console.log('双击检测成功！');
             // 防抖动：300ms内只能发射一次
             if (now - lastFireTime < 300) {
+                console.log('被防抖动阻止');
                 return;
             }
             
