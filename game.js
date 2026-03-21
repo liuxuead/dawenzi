@@ -10,7 +10,8 @@ const gameState = {
     maxPlayerHealth: 100,
     level: 1,
     score: 0,
-    highScore: parseInt(localStorage.getItem('highScore')) || 0
+    highScore: parseInt(localStorage.getItem('highScore')) || 0,
+    powerTimer: null
 };
 
 // 蚊子分数配置
@@ -42,6 +43,21 @@ const meizidanSound = document.getElementById('meizidanSound');
 const bgmSound = document.getElementById('bgmSound');
 const trailSvg = document.getElementById('trailSvg');
 
+// 开始电力自动增长
+function startPowerCharging() {
+    if (gameState.powerTimer) {
+        clearInterval(gameState.powerTimer);
+    }
+    
+    gameState.powerTimer = setInterval(() => {
+        if (gameState.power < gameState.maxPower) {
+            const chargeAmount = gameState.maxPower * 0.05;
+            gameState.power = Math.min(gameState.power + chargeAmount, gameState.maxPower);
+            updatePowerBar();
+        }
+    }, 1000);
+}
+
 // 初始化
 function init() {
     console.log('Game init started');
@@ -54,6 +70,7 @@ function init() {
     startMosquitoMovement();
     bindEvents();
     initBGM();
+    startPowerCharging();
     console.log('Game init completed');
 }
 
@@ -1089,6 +1106,9 @@ function restartGame() {
     while (trailSvg.firstChild) {
         trailSvg.removeChild(trailSvg.firstChild);
     }
+    
+    // 重新开始电力自动增长
+    startPowerCharging();
     
     // 重新开始背景音乐
     bgmStarted = true;
