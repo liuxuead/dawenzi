@@ -589,6 +589,16 @@ function bindEvents() {
                 return;
             }
             
+            // 检查电力是否满格
+            if (gameState.power < gameState.maxPower) {
+                // 播放没子弹音效
+                pauseBGM();
+                meizidanSound.currentTime = 0;
+                meizidanSound.play();
+                meizidanSound.onended = resumeBGM;
+                return;
+            }
+            
             // 找出离两只手指连线最近的蚊子
             const closestMosquito = findClosestMosquitoToLine(firstTouchPos, leavingPos);
             
@@ -598,6 +608,10 @@ function bindEvents() {
                 
                 // 更新最后发射时间
                 lastFireTime = now;
+                
+                // 清空电力
+                gameState.power = 0;
+                updatePowerBar();
                 
                 // 发射追踪飞弹
                 setTimeout(() => {
@@ -618,6 +632,182 @@ function bindEvents() {
             fire();
         }
         lastTapTime = now;
+    });
+    
+    // PC端键盘控制
+    let keysPressed = {};
+    
+    document.addEventListener('keydown', (e) => {
+        keysPressed[e.key] = true;
+        
+        // 空格键：电力蓄积
+        if (e.code === 'Space') {
+            e.preventDefault();
+            startBGMOnFirstInteraction();
+            setActiveButton('green');
+            
+            const currentTime = Date.now();
+            const clickInterval = currentTime - lastClickTime;
+            lastClickTime = currentTime;
+            
+            let chargeAmount = 5;
+            if (clickInterval < 300) chargeAmount = 15;
+            else if (clickInterval < 600) chargeAmount = 10;
+            
+            gameState.power = Math.min(gameState.power + chargeAmount, gameState.maxPower);
+            updatePowerBar();
+            
+            vibrate(50);
+        }
+        
+        // J键或1键：普通发射
+        if ((e.key === 'j' || e.key === 'J' || e.key === '1') && !e.repeat) {
+            e.preventDefault();
+            const now = Date.now();
+            
+            if (now - lastFireTime < 300) {
+                return;
+            }
+            lastFireTime = now;
+            
+            startBGMOnFirstInteraction();
+            fire();
+        }
+        
+        // K键或2键：追踪飞弹
+        if ((e.key === 'k' || e.key === 'K' || e.key === '2') && !e.repeat) {
+            e.preventDefault();
+            const now = Date.now();
+            
+            if (now - lastFireTime < 300) {
+                return;
+            }
+            
+            // 检查电力是否满格
+            if (gameState.power < gameState.maxPower) {
+                pauseBGM();
+                meizidanSound.currentTime = 0;
+                meizidanSound.play();
+                meizidanSound.onended = resumeBGM;
+                return;
+            }
+            
+            // 找出离炮筒指向最近的蚊子
+            const cannonBase = document.querySelector('.cannon-base');
+            const cannonRect = cannonBase.getBoundingClientRect();
+            const cannonCenter = {
+                x: cannonRect.left + cannonRect.width / 2,
+                y: cannonRect.top + cannonRect.height / 2
+            };
+            
+            const angleRad = gameState.cannonAngle * Math.PI / 180;
+            const lineEnd = {
+                x: cannonCenter.x + Math.cos(angleRad) * 1000,
+                y: cannonCenter.y + Math.sin(angleRad) * 1000
+            };
+            
+            const closestMosquito = findClosestMosquitoToLine(cannonCenter, lineEnd);
+            
+            if (closestMosquito) {
+                markMosquito(closestMosquito);
+                lastFireTime = now;
+                
+                // 清空电力
+                gameState.power = 0;
+                updatePowerBar();
+                
+                setTimeout(() => {
+                    createHomingMissile(closestMosquito);
+                }, 300);
+            }
+        }
+        
+        // A键或左方向键：向左旋转炮筒
+        if ((e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') && !e.repeat) {
+            e.preventDefault();
+            rotateCannon(-5);
+        }
+        
+        // D键或右方向键：向右旋转炮筒
+        if ((e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') && !e.repeat) {
+            e.preventDefault();
+            rotateCannon(5);
+        }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        keysPressed[e.key] = false;
+    });
+    
+    // PC端鼠标控制
+    document.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
+            return;
+        }
+        
+        const now = Date.now();
+        
+        // 鼠标左键：普通发射
+        if (e.button === 0) {
+            if (now - lastFireTime < 300) {
+                return;
+            }
+            lastFireTime = now;
+            
+            startBGMOnFirstInteraction();
+            fire();
+        }
+        
+        // 鼠标右键：追踪飞弹
+        if (e.button === 2) {
+            e.preventDefault();
+            
+            if (now - lastFireTime < 300) {
+                return;
+            }
+            
+            // 检查电力是否满格
+            if (gameState.power < gameState.maxPower) {
+                pauseBGM();
+                meizidanSound.currentTime = 0;
+                meizidanSound.play();
+                meizidanSound.onended = resumeBGM;
+                return;
+            }
+            
+            const cannonBase = document.querySelector('.cannon-base');
+            const cannonRect = cannonBase.getBoundingClientRect();
+            const cannonCenter = {
+                x: cannonRect.left + cannonRect.width / 2,
+                y: cannonRect.top + cannonRect.height / 2
+            };
+            
+            const angleRad = gameState.cannonAngle * Math.PI / 180;
+            const lineEnd = {
+                x: cannonCenter.x + Math.cos(angleRad) * 1000,
+                y: cannonCenter.y + Math.sin(angleRad) * 1000
+            };
+            
+            const closestMosquito = findClosestMosquitoToLine(cannonCenter, lineEnd);
+            
+            if (closestMosquito) {
+                markMosquito(closestMosquito);
+                lastFireTime = now;
+                
+                // 清空电力
+                gameState.power = 0;
+                updatePowerBar();
+                
+                setTimeout(() => {
+                    createHomingMissile(closestMosquito);
+                }, 300);
+            }
+        }
+    });
+    
+    // 禁用右键菜单
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
     });
 }
 
@@ -667,22 +857,8 @@ function vibrate(duration = 100) {
 
 // 发射
 function fire() {
-    if (gameState.power < gameState.maxPower * 0.05) {
-        // 暂停背景音乐，播放没子弹音效
-        pauseBGM();
-        meizidanSound.currentTime = 0;
-        meizidanSound.play();
-        // 音效结束后恢复背景音乐
-        meizidanSound.onended = resumeBGM;
-        return;
-    }
-    
     // 发射时震动
     vibrate(150);
-    
-    // 消耗电力（5%）
-    gameState.power = Math.max(0, gameState.power - gameState.maxPower * 0.05);
-    updatePowerBar();
     
     // 炮筒动画
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg) scale(1.2)`;
@@ -703,6 +879,16 @@ function pauseBGM() {
 
 // 恢复背景音乐
 function resumeBGM() {
+    // 检查是否还有蚊子存活
+    const aliveMosquitoes = gameState.mosquitoes.filter(m => 
+        m.element.style.opacity !== '0' && m.element.parentNode
+    );
+    
+    // 如果所有蚊子都被消灭，不播放背景音乐
+    if (aliveMosquitoes.length === 0) {
+        return;
+    }
+    
     bgmSound.play().catch(e => {
         console.log('BGM resume failed:', e);
     });
