@@ -185,9 +185,13 @@ html, body {
     }
     
     .cannon-section {
-        height: 70px;
-        padding-bottom: 2px;
-        flex-shrink: 0;
+        height: 50px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding-bottom: 5px;
+        z-index: 1000;
     }
     
     .cannon-barrel {
@@ -196,12 +200,7 @@ html, body {
     }
     
     .controls {
-        height: 55px;
-        padding: 4px 8px 50px 8px;
-        gap: 6px;
-        flex-shrink: 0;
-        position: relative;
-        z-index: 9999;
+        display: none;
     }
     
     .control-btn {
@@ -473,12 +472,16 @@ html, body {
 
 /* 炮筒区域 */
 .cannon-section {
-    height: 90px;
-    position: relative;
+    height: 60px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    padding-bottom: 5px;
+    padding-bottom: 10px;
+    z-index: 1000;
 }
 
 .cannon-base {
@@ -532,21 +535,9 @@ html, body {
     border: 1px solid #FFA500;
 }
 
-/* 底部按钮 */
+/* 底部按钮 - 隐藏 */
 .controls {
-    height: 80px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    padding: 10px 15px 30px 15px;
-    background: #f0f0f0;
-    border-top: 2px solid #ddd;
-    position: relative;
-    z-index: 100;
-    box-sizing: border-box;
-    flex-shrink: 0;
-    margin-top: auto;
+    display: none;
 }
 
 /* 移动设备控制台调整 */
