@@ -467,8 +467,8 @@ function bindEvents() {
         const deltaX = touch.clientX - touchStartX;
         const deltaY = touch.clientY - touchStartY;
         
-        // 计算角度变化
-        const angleChange = deltaX * 0.3;
+        // 计算角度变化（提高灵敏度）
+        const angleChange = deltaX * 0.8;
         rotateCannon(angleChange);
         
         touchStartX = touch.clientX;
