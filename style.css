@@ -130,8 +130,8 @@ html, body {
 @media screen and (max-width: 480px) and (pointer: coarse) {
     .game-container {
         height: auto !important;
-        min-height: calc(100vh - 80px);
-        padding-bottom: 80px;
+        min-height: calc(100vh - 120px);
+        padding-bottom: 120px;
         display: flex !important;
         flex-direction: column !important;
     }
@@ -197,7 +197,7 @@ html, body {
     
     .controls {
         height: 55px;
-        padding: 4px 8px;
+        padding: 4px 8px 50px 8px;
         gap: 6px;
         flex-shrink: 0;
         position: relative;
@@ -539,7 +539,7 @@ html, body {
     justify-content: space-between;
     align-items: center;
     gap: 15px;
-    padding: 10px 15px;
+    padding: 10px 15px 30px 15px;
     background: #f0f0f0;
     border-top: 2px solid #ddd;
     position: relative;
@@ -554,7 +554,7 @@ html, body {
     .controls {
         height: 70px;
         gap: 10px;
-        padding: 8px 12px;
+        padding: 8px 12px 40px 12px;
     }
 }
 
