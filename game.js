@@ -80,16 +80,67 @@ function spawnMosquitoes() {
         
         gameArea.appendChild(mosquito);
         
-        gameState.mosquitoes.push({
+        // 蚊子属性配置
+        let mosquitoData = {
             element: mosquito,
+            id: i + 1,
             x: parseFloat(mosquito.style.left),
             y: parseFloat(mosquito.style.top),
             vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5
-        });
+            vy: (Math.random() - 0.5) * 0.5,
+            properties: {
+                speed: 1,
+                clone: false,
+                health: false,
+                heal: false
+            }
+        };
+        
+        // 根据编号设置属性
+        switch (i + 1) {
+            case 1:
+                // 1号蚊子：快速飞行
+                mosquitoData.properties.speed = 2;
+                mosquitoData.vx *= 2;
+                mosquitoData.vy *= 2;
+                break;
+            case 2:
+                // 2号蚊子：分身能力，尺寸2倍
+                mosquitoData.properties.clone = true;
+                mosquitoData.properties.cloneInterval = 2000;
+                mosquito.style.transform = 'scale(2)';
+                break;
+            case 3:
+                // 3号蚊子：带血条
+                mosquitoData.properties.health = true;
+                mosquitoData.properties.maxHealth = 100;
+                mosquitoData.properties.currentHealth = 100;
+                addHealthBar(mosquito, 100);
+                break;
+            case 4:
+                // 4号蚊子：加血能力，尺寸1.5倍
+                mosquitoData.properties.heal = true;
+                mosquitoData.properties.healInterval = 2000;
+                mosquito.style.transform = 'scale(1.5)';
+                break;
+            case 5:
+                // 5号蚊子：无属性
+                break;
+        }
+        
+        gameState.mosquitoes.push(mosquitoData);
     }
     
     updateRadarDots();
+    startMosquitoAbilities();
+}
+
+// 添加血条UI
+function addHealthBar(mosquito, health) {
+    const healthBar = document.createElement('div');
+    healthBar.className = 'health-bar';
+    healthBar.innerHTML = `<div class="health-fill" style="width: ${health}%"></div>`;
+    mosquito.appendChild(healthBar);
 }
 
 // 更新雷达红点
@@ -123,6 +174,91 @@ function startMosquitoMovement() {
         
         updateRadarDots();
     }, 50);
+}
+
+// 启动蚊子能力系统
+function startMosquitoAbilities() {
+    // 2号蚊子：分身能力
+    setInterval(() => {
+        gameState.mosquitoes.forEach(m => {
+            if (m.properties.clone && m.id === 2) {
+                cloneMosquito(m);
+            }
+        });
+    }, 2000);
+    
+    // 4号蚊子：加血能力
+    setInterval(() => {
+        gameState.mosquitoes.forEach(m => {
+            if (m.properties.heal && m.id === 4) {
+                healMosquito(m);
+            }
+        });
+    }, 2000);
+}
+
+// 克隆蚊子（2号蚊子分身）
+function cloneMosquito(originalMosquito) {
+    const clone = document.createElement('div');
+    clone.className = 'mosquito mosquito-image-only';
+    clone.style.left = originalMosquito.x + '%';
+    clone.style.top = originalMosquito.y + '%';
+    clone.style.transform = 'scale(2)';
+    clone.style.opacity = '0.7';
+    
+    const img = document.createElement('img');
+    img.className = 'mosquito-image';
+    img.src = 'wenzi2.png';
+    img.alt = '蚊子2克隆';
+    clone.appendChild(img);
+    
+    gameArea.appendChild(clone);
+    
+    gameState.mosquitoes.push({
+        element: clone,
+        id: 2,
+        x: originalMosquito.x,
+        y: originalMosquito.y,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        properties: {
+            speed: 1,
+            clone: false,
+            health: false,
+            heal: false
+        }
+    });
+    
+    // 3秒后消失
+    setTimeout(() => {
+        clone.remove();
+        const index = gameState.mosquitoes.findIndex(m => m.element === clone);
+        if (index > -1) {
+            gameState.mosquitoes.splice(index, 1);
+        }
+    }, 3000);
+}
+
+// 加血功能（4号蚊子给3号加血）
+function healMosquito(healer) {
+    const targetMosquito = gameState.mosquitoes.find(m => m.id === 3 && m.properties.health);
+    if (targetMosquito) {
+        targetMosquito.properties.currentHealth = Math.min(
+            targetMosquito.properties.currentHealth + 20,
+            targetMosquito.properties.maxHealth
+        );
+        updateHealthBar(targetMosquito);
+    }
+}
+
+// 更新血条显示
+function updateHealthBar(mosquito) {
+    const healthBar = mosquito.element.querySelector('.health-bar');
+    if (healthBar) {
+        const healthFill = healthBar.querySelector('.health-fill');
+        const healthPercent = (mosquito.properties.currentHealth / mosquito.properties.maxHealth) * 100;
+        healthFill.style.width = healthPercent + '%';
+    }
 }
 
 // 点击时间记录
@@ -337,33 +473,63 @@ function createBullet() {
                 bulletRect.bottom > mosquitoRect.top) {
                 
                 // 击中蚊子
-                m.element.style.transform = 'scale(1.5)';
-                m.element.style.opacity = '0';
                 hit = true;
                 hitMosquito = m;
                 
-                // 暂停背景音乐，播放电击音效
-                pauseBGM();
-                zapperSound.currentTime = 0;
-                zapperSound.play();
-                // 音效结束后恢复背景音乐
-                zapperSound.onended = resumeBGM;
+                // 检查是否是3号蚊子（有血条）
+                if (m.properties.health) {
+                    // 每次减少50点血量（打两下消失）
+                    m.properties.currentHealth -= 50;
+                    updateHealthBar(m);
+                    
+                    // 播放电击音效
+                    pauseBGM();
+                    zapperSound.currentTime = 0;
+                    zapperSound.play();
+                    zapperSound.onended = resumeBGM;
+                    
+                    // 检查是否死亡
+                    if (m.properties.currentHealth <= 0) {
+                        m.element.style.transform = 'scale(1.5)';
+                        m.element.style.opacity = '0';
+                    } else {
+                        // 受伤动画
+                        m.element.style.filter = 'brightness(2)';
+                        setTimeout(() => {
+                            m.element.style.filter = 'brightness(1)';
+                        }, 200);
+                    }
+                } else {
+                    // 普通蚊子直接消灭
+                    m.element.style.transform = 'scale(1.5)';
+                    m.element.style.opacity = '0';
+                    
+                    // 暂停背景音乐，播放电击音效
+                    pauseBGM();
+                    zapperSound.currentTime = 0;
+                    zapperSound.play();
+                    // 音效结束后恢复背景音乐
+                    zapperSound.onended = resumeBGM;
+                }
             }
         });
         
         // 如果击中蚊子，移除该蚊子
         if (hitMosquito) {
             setTimeout(() => {
-                hitMosquito.element.remove();
-                const index = gameState.mosquitoes.indexOf(hitMosquito);
-                if (index > -1) {
-                    gameState.mosquitoes.splice(index, 1);
-                }
-                updateRadarDots();
-                
-                // 检查是否所有蚊子都被消灭
-                if (gameState.mosquitoes.length === 0) {
-                    showGameOver();
+                // 只有血量为0或普通蚊子才移除
+                if (!hitMosquito.properties.health || hitMosquito.properties.currentHealth <= 0) {
+                    hitMosquito.element.remove();
+                    const index = gameState.mosquitoes.indexOf(hitMosquito);
+                    if (index > -1) {
+                        gameState.mosquitoes.splice(index, 1);
+                    }
+                    updateRadarDots();
+                    
+                    // 检查是否所有蚊子都被消灭
+                    if (gameState.mosquitoes.length === 0) {
+                        showGameOver();
+                    }
                 }
             }, 500);
             updateRadarDots();

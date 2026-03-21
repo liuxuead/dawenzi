@@ -337,6 +337,26 @@ html, body {
     object-fit: cover;
 }
 
+/* 血条 */
+.health-bar {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 3px;
+    overflow: hidden;
+    z-index: 100;
+}
+
+.health-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    transition: width 0.3s ease;
+}
+
 /* 炮弹 */
 .bullet {
     position: absolute;
