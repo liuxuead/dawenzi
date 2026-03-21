@@ -32,8 +32,8 @@ html, body {
     touch-action: none;
 }
 
-/* 移动设备优化 */
-@media screen and (max-width: 768px), (max-height: 500px) {
+/* 移动设备优化 - 只针对触摸屏设备 */
+@media screen and (max-width: 768px) and (pointer: coarse) {
     /* 顶部区域调整 */
     .top-section {
         padding: 8px;
@@ -102,12 +102,12 @@ html, body {
     }
 }
 
-/* 针对v40等小屏幕设备的特殊处理 */
-@media screen and (max-height: 600px), (max-width: 480px) {
+/* 针对v40等小屏幕设备的特殊处理 - 只针对移动设备 */
+@media screen and (max-width: 480px) and (pointer: coarse) {
     .game-container {
-        height: 100vh !important;
-        min-height: 100vh;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        height: auto !important;
+        min-height: calc(100vh - 80px);
+        padding-bottom: 80px;
         display: flex !important;
         flex-direction: column !important;
     }
@@ -137,53 +137,53 @@ html, body {
     
     .game-area {
         flex: 1;
-        min-height: 0;
+        min-height: 120px;
         overflow: hidden;
     }
     
     .cannon-section {
-        height: 100px;
-        padding-bottom: 5px;
+        height: 90px;
+        padding-bottom: 3px;
         flex-shrink: 0;
     }
     
     .cannon-barrel {
-        height: 16px;
-        max-width: 55px;
+        height: 14px;
+        max-width: 50px;
     }
     
     .controls {
-        height: 60px;
-        padding: 5px 10px;
-        gap: 8px;
+        height: 55px;
+        padding: 4px 8px;
+        gap: 6px;
         flex-shrink: 0;
         position: relative;
         z-index: 9999;
     }
     
     .control-btn {
-        width: 55px;
-        height: 40px;
-        font-size: 14px;
+        width: 50px;
+        height: 38px;
+        font-size: 13px;
     }
     
     .arrow-btn {
-        width: 50px;
-        height: 45px;
+        width: 45px;
+        height: 38px;
     }
     
     .arrow-btn.left::before {
-        border-width: 10px 14px 10px 0;
+        border-width: 9px 12px 9px 0;
         border-color: transparent #fff transparent transparent;
     }
     
     .arrow-btn.right::before {
-        border-width: 10px 0 10px 14px;
+        border-width: 9px 0 9px 12px;
         border-color: transparent transparent transparent #fff;
     }
     
     .arrow-btn.left {
-        margin-right: 40px;
+        margin-right: 35px;
     }
 }
 
