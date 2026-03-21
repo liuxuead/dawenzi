@@ -81,8 +81,8 @@ html, body {
     
     /* 炮筒调整 */
     .cannon-barrel {
-        width: 31.25vw;
-        max-width: 75px;
+        width: 46.875vw;
+        max-width: 112.5px;
         height: 16px;
     }
     
@@ -196,7 +196,7 @@ html, body {
     
     .cannon-barrel {
         height: 14px;
-        max-width: 93.75px;
+        max-width: 140.6px;
     }
     
     .controls {
@@ -485,54 +485,71 @@ html, body {
 }
 
 .cannon-base {
-    width: 120px;
-    height: 40px;
-    background: #555;
-    border-radius: 10px 10px 0 0;
+    width: 140px;
+    height: 45px;
+    background: linear-gradient(135deg, #444 0%, #666 50%, #444 100%);
+    border: 2px solid #333;
+    border-radius: 15px 15px 5px 5px;
     position: relative;
     z-index: 10;
+    box-shadow: 
+        0 2px 4px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
 }
 
 .cannon-barrel {
-    width: 62.5vw;
-    max-width: 140.6px;
-    height: 20px;
-    background: #333;
+    width: 93.75vw;
+    max-width: 210.9px;
+    height: 22px;
+    background: linear-gradient(90deg, #333 0%, #555 50%, #333 100%);
+    border: 1px solid #222;
     position: absolute;
     bottom: 15px;
     transform-origin: left center;
     transform: rotate(-90deg);
     left: 50%;
     margin-left: -5px;
-    border-radius: 0 5px 5px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 
+        0 1px 3px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .cannon-muzzle {
     position: absolute;
-    right: -10px;
+    right: -12px;
     top: 50%;
     transform: translateY(-50%);
-    width: 20px;
-    height: 30px;
-    background: #222;
-    border-radius: 5px;
+    width: 24px;
+    height: 32px;
+    background: linear-gradient(135deg, #222 0%, #444 50%, #222 100%);
+    border: 1px solid #111;
+    border-radius: 6px;
+    box-shadow: 
+        0 1px 3px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .cannon-balls {
     position: absolute;
-    bottom: 10px;
+    bottom: 8px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 5px;
+    gap: 8px;
+    z-index: 20;
 }
 
 .ball {
-    width: 12px;
-    height: 12px;
-    background: #FFD700;
+    width: 14px;
+    height: 14px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
+    border: 2px solid #FF8C00;
     border-radius: 50%;
-    border: 1px solid #FFA500;
+    box-shadow: 
+        0 1px 2px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.3);
 }
 
 /* 底部按钮 - 隐藏 */
