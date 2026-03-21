@@ -171,6 +171,7 @@ function spawnMosquitoes() {
             case 2:
                 // 2号蚊子：分身能力，尺寸2倍
                 mosquitoData.properties.clone = true;
+                mosquitoData.properties.hasCloned = false;
                 mosquitoData.properties.cloneInterval = 2000;
                 mosquito.style.transform = 'scale(2)';
                 break;
@@ -263,81 +264,128 @@ function startMosquitoMovement() {
 
 // 启动蚊子能力系统
 function startMosquitoAbilities() {
-    // 2号蚊子：分身能力
-    setInterval(() => {
+    // 2号蚊子：分身能力（出场5秒后分身一次）
+    setTimeout(() => {
         gameState.mosquitoes.forEach(m => {
-            // 检查是否是原始2号蚊子（有分身属性）且还在场上
-            if (m.properties.clone && m.id === 2 && m.element.style.opacity !== '0') {
+            // 检查是否是原始2号蚊子（有分身属性）且还未分身
+            if (m.properties.clone && !m.properties.hasCloned && m.element.style.opacity !== '0') {
                 cloneMosquito(m);
+                m.properties.hasCloned = true; // 标记已分身
             }
         });
-    }, 2000);
+    }, 5000);
     
-    // 4号蚊子：加血能力
+    // 4号蚊子：加血能力（每10秒检测并补满3号蚊子血量）
     setInterval(() => {
         gameState.mosquitoes.forEach(m => {
             if (m.properties.heal && m.id === 4 && m.element.style.opacity !== '0') {
                 healMosquito(m);
             }
         });
-    }, 2000);
+    }, 10000);
 }
 
-// 克隆蚊子（2号蚊子分身）
-function cloneMosquito(originalMosquito) {
+// 克隆蚊子（2号蚊子分身，可以分任何蚊子）
+function cloneMosquito(cloner) {
+    // 获取场上所有活着的蚊子
+    const aliveMosquitoes = gameState.mosquitoes.filter(m => 
+        m.element.style.opacity !== '0' && m.element.parentNode
+    );
+    
+    if (aliveMosquitoes.length === 0) return;
+    
+    // 随机选择一只蚊子进行克隆
+    const targetMosquito = aliveMosquitoes[Math.floor(Math.random() * aliveMosquitoes.length)];
+    
     const clone = document.createElement('div');
     clone.className = 'mosquito mosquito-image-only';
-    clone.style.left = originalMosquito.x + '%';
-    clone.style.top = originalMosquito.y + '%';
-    clone.style.transform = 'scale(2)';
+    clone.style.left = targetMosquito.x + '%';
+    clone.style.top = targetMosquito.y + '%';
     clone.style.opacity = '0.7';
+    
+    // 根据目标蚊子设置大小
+    if (targetMosquito.id === 2) {
+        clone.style.transform = 'scale(2)';
+    } else if (targetMosquito.id === 4) {
+        clone.style.transform = 'scale(1.5)';
+    }
     
     const img = document.createElement('img');
     img.className = 'mosquito-image';
-    img.src = 'wenzi2.png';
-    img.alt = '蚊子2克隆';
+    img.src = `wenzi${targetMosquito.id}.png`;
+    img.alt = `蚊子${targetMosquito.id}克隆`;
     clone.appendChild(img);
+    
+    // 如果是3号蚊子，添加血条
+    if (targetMosquito.id === 3) {
+        const healthBar = document.createElement('div');
+        healthBar.className = 'health-bar';
+        healthBar.innerHTML = `<div class="health-fill" style="width: 100%"></div>`;
+        clone.appendChild(healthBar);
+    }
     
     gameArea.appendChild(clone);
     
-    gameState.mosquitoes.push({
+    // 克隆蚊子数据
+    const cloneData = {
         element: clone,
-        id: 2,
-        x: originalMosquito.x,
-        y: originalMosquito.y,
+        id: targetMosquito.id,
+        x: targetMosquito.x,
+        y: targetMosquito.y,
         vx: (Math.random() - 0.5) * 0.5,
         vy: (Math.random() - 0.5) * 0.5,
         properties: {
-            speed: 1,
+            speed: targetMosquito.properties.speed,
             clone: false,
-            health: false,
-            heal: false
+            health: targetMosquito.properties.health,
+            heal: false,
+            hasCloned: true,
+            maxHealth: targetMosquito.properties.maxHealth,
+            currentHealth: targetMosquito.properties.maxHealth || 100
         }
-    });
+    };
     
-    // 3秒后消失
-    setTimeout(() => {
-        if (clone && clone.parentNode) {
-            clone.remove();
-        }
-        const index = gameState.mosquitoes.findIndex(m => m.element === clone);
-        if (index > -1) {
-            gameState.mosquitoes.splice(index, 1);
-            updateRadarDots();
-        }
-    }, 3000);
+    // 如果是1号蚊子，速度翻倍
+    if (targetMosquito.id === 1) {
+        cloneData.vx *= 2;
+        cloneData.vy *= 2;
+    }
+    
+    gameState.mosquitoes.push(cloneData);
 }
 
-// 加血功能（4号蚊子给3号加血）
+// 加血功能（4号蚊子给3号加血，补满血量）
 function healMosquito(healer) {
-    const targetMosquito = gameState.mosquitoes.find(m => m.id === 3 && m.properties.health);
-    if (targetMosquito) {
-        targetMosquito.properties.currentHealth = Math.min(
-            targetMosquito.properties.currentHealth + 20,
-            targetMosquito.properties.maxHealth
-        );
-        updateHealthBar(targetMosquito);
-    }
+    // 查找场上所有活着的3号蚊子
+    const targetMosquitoes = gameState.mosquitoes.filter(m => 
+        m.id === 3 && 
+        m.properties.health && 
+        m.element.style.opacity !== '0' &&
+        m.element.parentNode
+    );
+    
+    if (targetMosquitoes.length === 0) return;
+    
+    // 4号蚊子发光效果
+    healer.element.style.filter = 'brightness(2) drop-shadow(0 0 10px #4CAF50)';
+    setTimeout(() => {
+        healer.element.style.filter = '';
+    }, 500);
+    
+    // 给所有3号蚊子补满血量
+    targetMosquitoes.forEach(target => {
+        // 只有血量未满才加血
+        if (target.properties.currentHealth < target.properties.maxHealth) {
+            target.properties.currentHealth = target.properties.maxHealth;
+            updateHealthBar(target);
+            
+            // 3号蚊子发光效果
+            target.element.style.filter = 'brightness(2) drop-shadow(0 0 10px #4CAF50)';
+            setTimeout(() => {
+                target.element.style.filter = '';
+            }, 500);
+        }
+    });
 }
 
 // 更新血条显示
