@@ -402,6 +402,9 @@ function updateHealthBar(mosquito) {
 let lastClickTime = 0;
 let bgmStarted = false;
 let lastFireTime = 0;
+let lastTapTime = 0;
+let touchStartX = 0;
+let touchStartY = 0;
 
 // 绑定事件
 function bindEvents() {
@@ -449,6 +452,45 @@ function bindEvents() {
     btnRight.addEventListener('click', () => {
         startBGMOnFirstInteraction();
         rotateCannon(5);
+    });
+    
+    // 触摸滑动控制炮筒方向（仅手机端）
+    gameArea.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+    }, { passive: true });
+    
+    gameArea.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - touchStartX;
+        const deltaY = touch.clientY - touchStartY;
+        
+        // 计算角度变化
+        const angleChange = deltaX * 0.3;
+        rotateCannon(angleChange);
+        
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+    }, { passive: false });
+    
+    // 双击屏幕发射（仅手机端）
+    gameArea.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        
+        // 双击检测：300ms内两次点击
+        if (now - lastTapTime < 300) {
+            // 防抖动：300ms内只能发射一次
+            if (now - lastFireTime < 300) {
+                return;
+            }
+            lastFireTime = now;
+            
+            startBGMOnFirstInteraction();
+            fire();
+        }
+        lastTapTime = now;
     });
 }
 
