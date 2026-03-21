@@ -454,10 +454,8 @@ function bindEvents() {
         rotateCannon(5);
     });
     
-    // 触摸滑动控制炮筒方向（整个游戏区域都有效）
-    const gameContainer = document.querySelector('.game-container');
-    
-    gameContainer.addEventListener('touchstart', (e) => {
+    // 触摸滑动控制炮筒方向（全屏有效）
+    document.addEventListener('touchstart', (e) => {
         // 排除按钮区域
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
             return;
@@ -467,7 +465,7 @@ function bindEvents() {
         touchStartY = touch.clientY;
     }, { passive: true });
     
-    gameContainer.addEventListener('touchmove', (e) => {
+    document.addEventListener('touchmove', (e) => {
         // 排除按钮区域
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
             return;
@@ -485,8 +483,8 @@ function bindEvents() {
         touchStartY = touch.clientY;
     }, { passive: false });
     
-    // 双击屏幕发射（整个游戏区域都有效，排除按钮）
-    gameContainer.addEventListener('touchend', (e) => {
+    // 双击屏幕发射（全屏有效，排除按钮）
+    document.addEventListener('touchend', (e) => {
         // 排除按钮区域
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
             return;
