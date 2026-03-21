@@ -1,14 +1,33 @@
 // 游戏状态
 const gameState = {
-    power: 60,
+    power: 50,
+    maxPower: 50,
     isCharging: false,
     activeButton: null,
     mosquitoes: [],
-    cannonAngle: -90
+    cannonAngle: -90,
+    playerHealth: 100,
+    maxPlayerHealth: 100,
+    level: 1,
+    score: 0,
+    highScore: parseInt(localStorage.getItem('highScore')) || 0
+};
+
+// 蚊子分数配置
+const mosquitoScores = {
+    1: 20,
+    2: 50,
+    3: 40,
+    4: 10,
+    5: 10
 };
 
 // DOM 元素
 const powerFill = document.getElementById('powerFill');
+const playerHealthFill = document.getElementById('playerHealthFill');
+const levelValue = document.getElementById('levelValue');
+const scoreValue = document.getElementById('scoreValue');
+const highScoreValue = document.getElementById('highScoreValue');
 const radar = document.getElementById('radar');
 const btnRed = document.getElementById('btnRed');
 const btnGreen = document.getElementById('btnGreen');
@@ -28,11 +47,54 @@ function init() {
     console.log('Game init started');
     initCanvas();
     updatePowerBar();
+    updatePlayerHealth();
+    updateLevel();
+    updateScore();
     spawnMosquitoes();
     startMosquitoMovement();
     bindEvents();
     initBGM();
     console.log('Game init completed');
+}
+
+// 更新玩家血条
+function updatePlayerHealth() {
+    if (playerHealthFill) {
+        playerHealthFill.style.width = (gameState.playerHealth / gameState.maxPlayerHealth * 100) + '%';
+    }
+}
+
+// 更新等级显示
+function updateLevel() {
+    if (levelValue) {
+        levelValue.textContent = gameState.level;
+    }
+}
+
+// 更新分数显示
+function updateScore() {
+    if (scoreValue) {
+        scoreValue.textContent = gameState.score;
+    }
+    if (highScoreValue) {
+        highScoreValue.textContent = gameState.highScore;
+    }
+}
+
+// 添加分数
+function addScore(mosquitoId) {
+    const points = mosquitoScores[mosquitoId] || 10;
+    gameState.score += points;
+    updateScore();
+}
+
+// 保存最高分数
+function saveHighScore() {
+    if (gameState.score > gameState.highScore) {
+        gameState.highScore = gameState.score;
+        localStorage.setItem('highScore', gameState.highScore);
+        updateScore();
+    }
 }
 
 // 初始化背景音乐
@@ -52,7 +114,9 @@ function initCanvas() {
 
 // 更新电力条
 function updatePowerBar() {
-    powerFill.style.width = gameState.power + '%';
+    if (powerFill) {
+        powerFill.style.width = (gameState.power / gameState.maxPower * 100) + '%';
+    }
 }
 
 // 生成蚊子
@@ -181,7 +245,8 @@ function startMosquitoAbilities() {
     // 2号蚊子：分身能力
     setInterval(() => {
         gameState.mosquitoes.forEach(m => {
-            if (m.properties.clone && m.id === 2) {
+            // 检查是否是原始2号蚊子（有分身属性）且还在场上
+            if (m.properties.clone && m.id === 2 && m.element.style.opacity !== '0') {
                 cloneMosquito(m);
             }
         });
@@ -190,7 +255,7 @@ function startMosquitoAbilities() {
     // 4号蚊子：加血能力
     setInterval(() => {
         gameState.mosquitoes.forEach(m => {
-            if (m.properties.heal && m.id === 4) {
+            if (m.properties.heal && m.id === 4 && m.element.style.opacity !== '0') {
                 healMosquito(m);
             }
         });
@@ -264,11 +329,22 @@ function updateHealthBar(mosquito) {
 // 点击时间记录
 let lastClickTime = 0;
 let bgmStarted = false;
+let lastFireTime = 0;
 
 // 绑定事件
 function bindEvents() {
     // 红色按钮 - 发射
-    btnRed.addEventListener('click', () => {
+    btnRed.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // 防抖动：300ms内只能发射一次
+        const now = Date.now();
+        if (now - lastFireTime < 300) {
+            return;
+        }
+        lastFireTime = now;
+        
         startBGMOnFirstInteraction();
         setActiveButton('red');
         fire();
@@ -287,7 +363,7 @@ function bindEvents() {
         if (clickInterval < 300) chargeAmount = 15; // 快速点击
         else if (clickInterval < 600) chargeAmount = 10; // 中等速度点击
         
-        gameState.power = Math.min(gameState.power + chargeAmount, 100);
+        gameState.power = Math.min(gameState.power + chargeAmount, gameState.maxPower);
         updatePowerBar();
     });
     
@@ -350,7 +426,7 @@ function vibrate(duration = 100) {
 
 // 发射
 function fire() {
-    if (gameState.power < 10) {
+    if (gameState.power < gameState.maxPower * 0.05) {
         // 暂停背景音乐，播放没子弹音效
         pauseBGM();
         meizidanSound.currentTime = 0;
@@ -363,8 +439,8 @@ function fire() {
     // 发射时震动
     vibrate(150);
     
-    // 消耗电力
-    gameState.power = Math.max(0, gameState.power - 20);
+    // 消耗电力（5%）
+    gameState.power = Math.max(0, gameState.power - gameState.maxPower * 0.05);
     updatePowerBar();
     
     // 炮筒动画
@@ -492,6 +568,8 @@ function createBullet() {
                     if (m.properties.currentHealth <= 0) {
                         m.element.style.transform = 'scale(1.5)';
                         m.element.style.opacity = '0';
+                        // 添加分数
+                        addScore(m.id);
                     } else {
                         // 受伤动画
                         m.element.style.filter = 'brightness(2)';
@@ -503,6 +581,8 @@ function createBullet() {
                     // 普通蚊子直接消灭
                     m.element.style.transform = 'scale(1.5)';
                     m.element.style.opacity = '0';
+                    // 添加分数
+                    addScore(m.id);
                     
                     // 暂停背景音乐，播放电击音效
                     pauseBGM();
@@ -555,15 +635,21 @@ function showGameOver() {
     // 停止背景音乐
     pauseBGM();
     bgmStarted = false;
+    // 保存最高分数
+    saveHighScore();
 }
 
 // 重新开始游戏
 function restartGame() {
     gameOverModal.style.display = 'none';
-    gameState.power = 60;
+    gameState.power = gameState.maxPower;
     gameState.cannonAngle = -90;
+    gameState.level++; // 等级提升
+    gameState.playerHealth = gameState.maxPlayerHealth; // 恢复血量
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     updatePowerBar();
+    updateLevel();
+    updatePlayerHealth();
     spawnMosquitoes();
     
     // 清除所有轨迹线
