@@ -454,14 +454,24 @@ function bindEvents() {
         rotateCannon(5);
     });
     
-    // 触摸滑动控制炮筒方向（仅手机端）
-    gameArea.addEventListener('touchstart', (e) => {
+    // 触摸滑动控制炮筒方向（整个游戏区域都有效）
+    const gameContainer = document.querySelector('.game-container');
+    
+    gameContainer.addEventListener('touchstart', (e) => {
+        // 排除按钮区域
+        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
+            return;
+        }
         const touch = e.touches[0];
         touchStartX = touch.clientX;
         touchStartY = touch.clientY;
     }, { passive: true });
     
-    gameArea.addEventListener('touchmove', (e) => {
+    gameContainer.addEventListener('touchmove', (e) => {
+        // 排除按钮区域
+        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
+            return;
+        }
         e.preventDefault();
         const touch = e.touches[0];
         const deltaX = touch.clientX - touchStartX;
@@ -475,8 +485,12 @@ function bindEvents() {
         touchStartY = touch.clientY;
     }, { passive: false });
     
-    // 双击屏幕发射（仅手机端）
-    gameArea.addEventListener('touchend', (e) => {
+    // 双击屏幕发射（整个游戏区域都有效，排除按钮）
+    gameContainer.addEventListener('touchend', (e) => {
+        // 排除按钮区域
+        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
+            return;
+        }
         const now = Date.now();
         
         // 双击检测：300ms内两次点击
