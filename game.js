@@ -404,8 +404,6 @@ let bgmStarted = false;
 let lastFireTime = 0;
 let lastTapTime = 0;
 let lastCannonTapTime = 0;
-let tapCount = 0; // 记录点击次数（用于三击检测）
-let lastTripleTapTime = 0; // 上次三击检测的时间
 let touchStartX = 0;
 let touchStartY = 0;
 let isTouching = false; // 标记手指是否在屏幕上
@@ -469,10 +467,21 @@ function bindEvents() {
         // 记录所有手指
         for (let i = 0; i < e.touches.length; i++) {
             const touch = e.touches[i];
-            activeTouches.set(touch.identifier, {
-                x: touch.clientX,
-                y: touch.clientY
-            });
+            const existingTouch = activeTouches.get(touch.identifier);
+            if (existingTouch) {
+                // 手指已存在，更新位置
+                existingTouch.x = touch.clientX;
+                existingTouch.y = touch.clientY;
+            } else {
+                // 新手指，记录初始位置和当前位置
+                activeTouches.set(touch.identifier, {
+                    x: touch.clientX,
+                    y: touch.clientY,
+                    startX: touch.clientX,
+                    startY: touch.clientY,
+                    hasMoved: false
+                });
+            }
         }
         
         isTouching = true; // 标记手指在屏幕上
@@ -495,10 +504,18 @@ function bindEvents() {
         // 更新手指位置
         for (let i = 0; i < e.touches.length; i++) {
             const touch = e.touches[i];
-            activeTouches.set(touch.identifier, {
-                x: touch.clientX,
-                y: touch.clientY
-            });
+            const touchData = activeTouches.get(touch.identifier);
+            if (touchData) {
+                touchData.x = touch.clientX;
+                touchData.y = touch.clientY;
+                
+                // 检测是否滑动过（移动超过10像素）
+                const dx = touch.clientX - touchData.startX;
+                const dy = touch.clientY - touchData.startY;
+                if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                    touchData.hasMoved = true;
+                }
+            }
         }
         
         e.preventDefault();
@@ -579,68 +596,79 @@ function bindEvents() {
         const now = Date.now();
         console.log('时间差:', now - lastTapTime, 'ms, 点击次数:', tapCount);
         
-        // 三击检测：600ms内三次点击
-        if (now - lastTapTime < 600) {
-            tapCount++;
-            console.log('点击次数增加到:', tapCount);
+        // 双击检测：300ms内两次点击
+        if (now - lastTapTime < 300) {
+            // 防抖动：300ms内只能发射一次
+            if (now - lastFireTime < 300) {
+                return;
+            }
             
-            if (tapCount >= 3) {
-                console.log('三击检测成功！');
-                tapCount = 0; // 重置点击次数
+            // 检查是否有其他手指在屏幕上
+            if (e.touches.length > 0) {
+                // 多指触控模式：检测是否有滑动
+                console.log('多指触控模式，剩余手指数:', e.touches.length);
                 
-                // 防抖动：600ms内只能发射一次
-                if (now - lastFireTime < 600) {
-                    console.log('被防抖动阻止');
+                // 检查是否有手指滑动过
+                let hasSlidingTouch = false;
+                let stationaryTouchPos = null;
+                
+                for (let [id, touchData] of activeTouches) {
+                    if (touchData.hasMoved) {
+                        hasSlidingTouch = true;
+                        console.log('检测到滑动的手指:', id);
+                    } else {
+                        // 记录没有滑动的手指位置（按住不动的手指）
+                        stationaryTouchPos = {
+                            x: touchData.x,
+                            y: touchData.y
+                        };
+                        console.log('按住不动的手指位置:', stationaryTouchPos);
+                    }
+                }
+                
+                if (!hasSlidingTouch || !stationaryTouchPos) {
+                    // 没有滑动或没有按住不动的手指，使用普通发射
+                    console.log('没有满足追踪条件，使用普通发射');
+                    lastFireTime = now;
+                    startBGMOnFirstInteraction();
+                    fire();
                     return;
                 }
                 
-                // 检查是否有其他手指在屏幕上
-                if (e.touches.length > 0) {
-                    // 多指触控模式：发射追踪飞弹
-                    console.log('多指触控模式：发射追踪飞弹，剩余手指数:', e.touches.length);
+                // 满足条件：一只手指按住不动，另一只手指滑动，发射追踪飞弹
+                console.log('满足追踪条件，发射追踪飞弹');
+                
+                // 获取双击手指的位置（最后离开的手指）
+                const doubleTapTouch = e.changedTouches[0];
+                const doubleTapPos = {
+                    x: doubleTapTouch.clientX,
+                    y: doubleTapTouch.clientY
+                };
+                
+                console.log('双击位置:', doubleTapPos, '按住位置:', stationaryTouchPos);
+                
+                // 找出离两只手指连线最近的蚊子
+                const closestMosquito = findClosestMosquitoToLine(stationaryTouchPos, doubleTapPos);
+                
+                console.log('最近的蚊子:', closestMosquito);
+                
+                if (closestMosquito) {
+                    // 标记蚊子
+                    markMosquito(closestMosquito);
                     
-                    // 获取三击手指的位置（最后离开的手指）
-                    const tripleTapTouch = e.changedTouches[0];
-                    const tripleTapPos = {
-                        x: tripleTapTouch.clientX,
-                        y: tripleTapTouch.clientY
-                    };
-                    
-                    // 获取仍在屏幕上的手指位置
-                    const existingTouchPos = {
-                        x: e.touches[0].clientX,
-                        y: e.touches[0].clientY
-                    };
-                    
-                    console.log('三击位置:', tripleTapPos, '已有手指位置:', existingTouchPos);
-                    
-                    // 找出离两只手指连线最近的蚊子
-                    const closestMosquito = findClosestMosquitoToLine(existingTouchPos, tripleTapPos);
-                    
-                    console.log('最近的蚊子:', closestMosquito);
-                    
-                    if (closestMosquito) {
-                        // 标记蚊子
-                        markMosquito(closestMosquito);
-                        
-                        // 发射追踪飞弹
-                        setTimeout(() => {
-                            createHomingMissile(closestMosquito);
-                        }, 300);
-                    }
-                } else {
-                    // 单指三击模式：普通发射
-                    console.log('单指三击模式：普通发射');
-                    lastFireTime = now;
-                    
-                    startBGMOnFirstInteraction();
-                    fire();
+                    // 发射追踪飞弹
+                    setTimeout(() => {
+                        createHomingMissile(closestMosquito);
+                    }, 300);
                 }
+            } else {
+                // 单指双击模式：普通发射（保持原逻辑不变）
+                console.log('单指双击模式：普通发射');
+                lastFireTime = now;
+                
+                startBGMOnFirstInteraction();
+                fire();
             }
-        } else {
-            // 超过时间间隔，重置点击次数
-            tapCount = 1;
-            console.log('超时，重置点击次数为:', tapCount);
         }
         lastTapTime = now;
     });
