@@ -42,6 +42,7 @@ const zapperSound = document.getElementById('zapperSound');
 const meizidanSound = document.getElementById('meizidanSound');
 const bgmSound = document.getElementById('bgmSound');
 const trailSvg = document.getElementById('trailSvg');
+const missileIcon = document.getElementById('missileIcon');
 
 // 开始电力自动增长
 function startPowerCharging() {
@@ -133,6 +134,15 @@ function initCanvas() {
 function updatePowerBar() {
     if (powerFill) {
         powerFill.style.width = (gameState.power / gameState.maxPower * 100) + '%';
+    }
+    
+    // 电力满格时显示飞弹图标，否则隐藏
+    if (missileIcon) {
+        if (gameState.power >= gameState.maxPower) {
+            missileIcon.classList.add('visible');
+        } else {
+            missileIcon.classList.remove('visible');
+        }
     }
 }
 
