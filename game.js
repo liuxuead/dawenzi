@@ -340,8 +340,22 @@ function spawnMosquitoes() {
     gameArea.innerHTML = '';
     gameState.mosquitoes = [];
     
-    // 获取当前轮次的配置，如果没有则使用第8轮配置
-    const config = levelConfigs[gameState.level] || levelConfigs[8];
+    // 获取当前轮次的配置
+    let config;
+    if (gameState.level <= 8) {
+        // 第1-8轮使用固定配置
+        config = { ...levelConfigs[gameState.level] };
+    } else {
+        // 第9轮及以后，1号和3号蚊子数量动态增加
+        const extraCount = gameState.level - 8;
+        config = {
+            1: 4 + extraCount,  // 1号：4 + (level - 8)
+            2: 3,               // 2号：保持第8轮配置
+            3: 3 + extraCount,  // 3号：3 + (level - 8)
+            4: 3,               // 4号：保持第8轮配置
+            5: 3                // 5号：保持第8轮配置
+        };
+    }
     
     // 根据配置生成蚊子
     for (let mosquitoId = 1; mosquitoId <= 5; mosquitoId++) {
