@@ -201,6 +201,8 @@ function createMosquito(mosquitoId) {
     switch (mosquitoId) {
         case 1:
             mosquitoData.properties.speed = 6;
+            mosquitoData.properties.attack = true;
+            mosquitoData.properties.attackInterval = 15000;
             mosquitoData.vx *= 6;
             mosquitoData.vy *= 6;
             break;
@@ -335,14 +337,14 @@ function startMosquitoAbilities() {
         });
     }, 10000);
     
-    // 3号蚊子：攻击能力（每10秒发射攻击子弹）
+    // 蚊子攻击能力（根据攻击间隔发射攻击子弹）
     setInterval(() => {
         gameState.mosquitoes.forEach(m => {
-            if (m.properties.attack && m.id === 3 && m.element.style.opacity !== '0') {
+            if (m.properties.attack && m.element.style.opacity !== '0') {
                 mosquitoAttack(m);
             }
         });
-    }, 10000);
+    }, 5000);
     
     // 玩家血量自动回复（每秒回复2点）
     setInterval(() => {
