@@ -227,9 +227,9 @@ function updatePowerBar() {
         powerFill.style.width = (gameState.power / gameState.maxPower * 100) + '%';
     }
     
-    // 电力满格时显示飞弹图标，否则隐藏
+    // 电力达到1/3时显示飞弹图标，否则隐藏
     if (missileIcon) {
-        if (gameState.power >= gameState.maxPower) {
+        if (gameState.power >= gameState.maxPower / 3) {
             missileIcon.classList.add('visible');
         } else {
             missileIcon.classList.remove('visible');
@@ -860,8 +860,8 @@ function bindEvents() {
                 return;
             }
             
-            // 检查电力是否满格
-            if (gameState.power < gameState.maxPower) {
+            // 检查电力是否足够（需要1/3电力）
+            if (gameState.power < gameState.maxPower / 3) {
                 // 播放没子弹音效
                 pauseBGM();
                 meizidanSound.currentTime = 0;
@@ -880,8 +880,8 @@ function bindEvents() {
                 // 更新最后发射时间
                 lastFireTime = now;
                 
-                // 清空电力
-                gameState.power = 0;
+                // 消耗1/3电力
+                gameState.power = Math.max(0, gameState.power - gameState.maxPower / 3);
                 updatePowerBar();
                 
                 // 发射追踪飞弹
@@ -954,8 +954,8 @@ function bindEvents() {
                 return;
             }
             
-            // 检查电力是否满格
-            if (gameState.power < gameState.maxPower) {
+            // 检查电力是否足够（需要1/3电力）
+            if (gameState.power < gameState.maxPower / 3) {
                 pauseBGM();
                 meizidanSound.currentTime = 0;
                 meizidanSound.play();
@@ -983,8 +983,8 @@ function bindEvents() {
                 markMosquito(closestMosquito);
                 lastFireTime = now;
                 
-                // 清空电力
-                gameState.power = 0;
+                // 消耗1/3电力
+                gameState.power = Math.max(0, gameState.power - gameState.maxPower / 3);
                 updatePowerBar();
                 
                 setTimeout(() => {
@@ -1037,8 +1037,8 @@ function bindEvents() {
                 return;
             }
             
-            // 检查电力是否满格
-            if (gameState.power < gameState.maxPower) {
+            // 检查电力是否足够（需要1/3电力）
+            if (gameState.power < gameState.maxPower / 3) {
                 pauseBGM();
                 meizidanSound.currentTime = 0;
                 meizidanSound.play();
@@ -1065,8 +1065,8 @@ function bindEvents() {
                 markMosquito(closestMosquito);
                 lastFireTime = now;
                 
-                // 清空电力
-                gameState.power = 0;
+                // 消耗1/3电力
+                gameState.power = Math.max(0, gameState.power - gameState.maxPower / 3);
                 updatePowerBar();
                 
                 setTimeout(() => {
