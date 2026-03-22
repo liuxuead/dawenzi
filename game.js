@@ -11,7 +11,8 @@ const gameState = {
     level: 1,
     score: 0,
     highScore: parseInt(localStorage.getItem('highScore')) || 0,
-    powerTimer: null
+    powerTimer: null,
+    healthTimer: null
 };
 
 // 蚊子分数配置
@@ -216,7 +217,7 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.speed = 6;
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 15000;
-            mosquitoData.properties.lastAttackTime = 0;
+            mosquitoData.properties.lastAttackTime = Date.now();
             mosquitoData.vx *= 6;
             mosquitoData.vy *= 6;
             break;
@@ -232,7 +233,7 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.currentHealth = 100;
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 10000;
-            mosquitoData.properties.lastAttackTime = 0;
+            mosquitoData.properties.lastAttackTime = Date.now();
             addHealthBar(mosquito, 100);
             break;
         case 4:
@@ -332,6 +333,11 @@ function startMosquitoMovement() {
 
 // 启动蚊子能力系统
 function startMosquitoAbilities() {
+    // 清除旧的回血定时器
+    if (gameState.healthTimer) {
+        clearInterval(gameState.healthTimer);
+    }
+    
     // 2号蚊子：分身能力（出场5秒后分身一次）
     setTimeout(() => {
         gameState.mosquitoes.forEach(m => {
@@ -366,7 +372,7 @@ function startMosquitoAbilities() {
     }, 1000);
     
     // 玩家血量自动回复（每秒回复2点）
-    setInterval(() => {
+    gameState.healthTimer = setInterval(() => {
         if (gameState.playerHealth < gameState.maxPlayerHealth) {
             gameState.playerHealth = Math.min(gameState.playerHealth + 2, gameState.maxPlayerHealth);
             updatePlayerHealth();
@@ -433,7 +439,8 @@ function cloneMosquito(cloner) {
             currentHealth: targetMosquito.properties.maxHealth || 100,
             // 继承攻击属性（如果是3号蚊子）
             attack: targetMosquito.properties.attack || false,
-            attackInterval: targetMosquito.properties.attackInterval || 10000
+            attackInterval: targetMosquito.properties.attackInterval || 10000,
+            lastAttackTime: Date.now()
         }
     };
     
@@ -1232,6 +1239,11 @@ function createBullet() {
 
 // 显示游戏结束弹窗
 function showGameOver(reason = 'win') {
+    // 防止重复调用
+    if (gameOverModal.style.display === 'flex') {
+        return;
+    }
+    
     gameOverModal.style.display = 'flex';
     // 停止背景音乐
     pauseBGM();
