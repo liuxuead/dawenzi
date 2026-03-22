@@ -212,12 +212,20 @@ function createMosquito(mosquitoId) {
         }
     };
     
+    // 根据轮次计算初始攻击延迟
+    // 第1轮：立即(0秒)，第2轮：2秒，第3轮：4秒，第4轮：6秒，第5轮：8秒，第6轮及以后：0秒
+    let initialAttackDelay = 0;
+    if (gameState.level === 2) initialAttackDelay = 2000;
+    else if (gameState.level === 3) initialAttackDelay = 4000;
+    else if (gameState.level === 4) initialAttackDelay = 6000;
+    else if (gameState.level === 5) initialAttackDelay = 8000;
+    
     switch (mosquitoId) {
         case 1:
             mosquitoData.properties.speed = 6;
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 15000;
-            mosquitoData.properties.lastAttackTime = Date.now();
+            mosquitoData.properties.lastAttackTime = Date.now() + initialAttackDelay;
             mosquitoData.vx *= 6;
             mosquitoData.vy *= 6;
             break;
@@ -233,7 +241,7 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.currentHealth = 100;
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 10000;
-            mosquitoData.properties.lastAttackTime = Date.now();
+            mosquitoData.properties.lastAttackTime = Date.now() + initialAttackDelay;
             addHealthBar(mosquito, 100);
             break;
         case 4:
@@ -421,6 +429,13 @@ function cloneMosquito(cloner) {
     
     gameArea.appendChild(clone);
     
+    // 根据轮次计算初始攻击延迟（克隆蚊子也遵循同样的规则）
+    let cloneInitialAttackDelay = 0;
+    if (gameState.level === 2) cloneInitialAttackDelay = 2000;
+    else if (gameState.level === 3) cloneInitialAttackDelay = 4000;
+    else if (gameState.level === 4) cloneInitialAttackDelay = 6000;
+    else if (gameState.level === 5) cloneInitialAttackDelay = 8000;
+    
     // 克隆蚊子数据 - 继承原始蚊子的所有属性
     const cloneData = {
         element: clone,
@@ -440,7 +455,7 @@ function cloneMosquito(cloner) {
             // 继承攻击属性（如果是3号蚊子）
             attack: targetMosquito.properties.attack || false,
             attackInterval: targetMosquito.properties.attackInterval || 10000,
-            lastAttackTime: Date.now()
+            lastAttackTime: Date.now() + cloneInitialAttackDelay
         }
     };
     
@@ -1273,11 +1288,12 @@ function showGameOver(reason = 'win') {
         // 血量为空的情况，重置为第一轮
         gameState.level = 1;
         gameState.score = 0;
+        gameState.playerHealth = gameState.maxPlayerHealth; // 血条空了才补满
     } else {
         // 消灭所有蚊子的情况，进入下一轮
         gameState.level += 1;
+        // 保留当前血量，不补满
     }
-    gameState.playerHealth = gameState.maxPlayerHealth;
     gameState.power = 50;
     gameState.cannonAngle = -90;
     updateScore();
