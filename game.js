@@ -1295,7 +1295,7 @@ function showGameOver(reason = 'win') {
     } else {
         // 消灭所有蚊子的情况
         if (gameOverText) gameOverText.textContent = '恭喜！全部消灭！';
-        if (gameOverMessage) gameOverMessage.textContent = '点击按钮重新开始';
+        if (gameOverMessage) gameOverMessage.textContent = '点击按钮进入下一关';
     }
     
     // 重置游戏状态（除了最高分）
