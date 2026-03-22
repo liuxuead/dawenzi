@@ -1257,8 +1257,14 @@ function showGameOver(reason = 'win') {
     }
     
     // 重置游戏状态（除了最高分）
-    gameState.level = 1;
-    gameState.score = 0;
+    if (reason === 'lose') {
+        // 血量为空的情况，重置为第一轮
+        gameState.level = 1;
+        gameState.score = 0;
+    } else {
+        // 消灭所有蚊子的情况，进入下一轮
+        gameState.level += 1;
+    }
     gameState.playerHealth = gameState.maxPlayerHealth;
     gameState.power = 50;
     gameState.cannonAngle = -90;
@@ -1273,9 +1279,7 @@ function showGameOver(reason = 'win') {
 // 重新开始游戏
 function restartGame() {
     gameOverModal.style.display = 'none';
-    // 重置游戏状态到初始值
-    gameState.level = 1;
-    gameState.score = 0;
+    // 重置游戏状态（保持level不变，因为showGameOver已经设置了正确的level）
     gameState.cannonAngle = -90;
     gameState.playerHealth = gameState.maxPlayerHealth; // 恢复血量
     gameState.power = 50; // 重置电力
