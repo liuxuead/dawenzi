@@ -63,6 +63,7 @@ function startPowerCharging() {
 function init() {
     console.log('Game init started');
     initCanvas();
+    updateBackground();
     updatePowerBar();
     updatePlayerHealth();
     updateLevel();
@@ -86,6 +87,15 @@ function updatePlayerHealth() {
 function updateLevel() {
     if (levelValue) {
         levelValue.textContent = gameState.level;
+    }
+}
+
+// 更新背景图片
+function updateBackground() {
+    const gameArea = document.getElementById('gameArea');
+    if (gameArea) {
+        const bgImage = `background${gameState.level}.jpg`;
+        gameArea.style.backgroundImage = `url('${bgImage}')`;
     }
 }
 
@@ -146,83 +156,95 @@ function updatePowerBar() {
     }
 }
 
+// 轮次配置
+const levelConfigs = {
+    1: { 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 },      // 第1轮：各1只
+    2: { 1: 2, 2: 1, 3: 1, 4: 1, 5: 1 },      // 第2轮：1号×2
+    3: { 1: 2, 2: 2, 3: 1, 4: 1, 5: 1 },      // 第3轮：1号×2, 2号×2
+    4: { 1: 2, 2: 2, 3: 2, 4: 1, 5: 1 },      // 第4轮：1号×2, 2号×2, 3号×2
+    5: { 1: 3, 2: 2, 3: 2, 4: 2, 5: 1 },      // 第5轮：全能力
+    6: { 1: 3, 2: 3, 3: 2, 4: 2, 5: 2 },      // 第6轮：更多
+    7: { 1: 4, 2: 3, 3: 3, 4: 2, 5: 2 },      // 第7轮：极限
+    8: { 1: 4, 2: 3, 3: 3, 4: 3, 5: 3 },      // 第8轮：地狱
+};
+
+// 创建单个蚊子
+function createMosquito(mosquitoId) {
+    const mosquito = document.createElement('div');
+    mosquito.className = 'mosquito mosquito-image-only';
+    mosquito.style.left = Math.random() * 80 + 10 + '%';
+    mosquito.style.top = Math.random() * 60 + 10 + '%';
+    
+    const img = document.createElement('img');
+    img.className = 'mosquito-image';
+    img.src = `wenzi${mosquitoId}.png`;
+    img.alt = `蚊子${mosquitoId}`;
+    mosquito.appendChild(img);
+    
+    gameArea.appendChild(mosquito);
+    
+    let mosquitoData = {
+        element: mosquito,
+        id: mosquitoId,
+        x: parseFloat(mosquito.style.left),
+        y: parseFloat(mosquito.style.top),
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5,
+        properties: {
+            speed: 1,
+            clone: false,
+            health: false,
+            heal: false
+        }
+    };
+    
+    switch (mosquitoId) {
+        case 1:
+            mosquitoData.properties.speed = 6;
+            mosquitoData.vx *= 6;
+            mosquitoData.vy *= 6;
+            break;
+        case 2:
+            mosquitoData.properties.clone = true;
+            mosquitoData.properties.hasCloned = false;
+            mosquitoData.properties.cloneInterval = 2000;
+            mosquito.style.transform = 'scale(2)';
+            break;
+        case 3:
+            mosquitoData.properties.health = true;
+            mosquitoData.properties.maxHealth = 100;
+            mosquitoData.properties.currentHealth = 100;
+            mosquitoData.properties.attack = true;
+            mosquitoData.properties.attackInterval = 10000;
+            addHealthBar(mosquito, 100);
+            break;
+        case 4:
+            mosquitoData.properties.heal = true;
+            mosquitoData.properties.healInterval = 2000;
+            mosquito.style.transform = 'scale(1.5)';
+            break;
+        case 5:
+            break;
+    }
+    
+    return mosquitoData;
+}
+
 // 生成蚊子
 function spawnMosquitoes() {
-    const count = 5;
     gameArea.innerHTML = '';
     gameState.mosquitoes = [];
     
-    for (let i = 0; i < count; i++) {
-        const mosquito = document.createElement('div');
-        mosquito.className = 'mosquito';
-        
-        // 所有蚊子都使用图片，不显示黑球背景
-        mosquito.classList.add('mosquito-image-only');
-        
-        mosquito.style.left = Math.random() * 80 + 10 + '%';
-        mosquito.style.top = Math.random() * 60 + 10 + '%';
-        
-        // 添加图片
-        const img = document.createElement('img');
-        img.className = 'mosquito-image';
-        img.src = `wenzi${i + 1}.png`;
-        img.alt = `蚊子${i + 1}`;
-        mosquito.appendChild(img);
-        
-        gameArea.appendChild(mosquito);
-        
-        // 蚊子属性配置
-        let mosquitoData = {
-            element: mosquito,
-            id: i + 1,
-            x: parseFloat(mosquito.style.left),
-            y: parseFloat(mosquito.style.top),
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: (Math.random() - 0.5) * 0.5,
-            properties: {
-                speed: 1,
-                clone: false,
-                health: false,
-                heal: false
-            }
-        };
-        
-        // 根据编号设置属性
-        switch (i + 1) {
-            case 1:
-                // 1号蚊子：快速飞行
-                mosquitoData.properties.speed = 6;
-                mosquitoData.vx *= 6;
-                mosquitoData.vy *= 6;
-                break;
-            case 2:
-                // 2号蚊子：分身能力，尺寸2倍
-                mosquitoData.properties.clone = true;
-                mosquitoData.properties.hasCloned = false;
-                mosquitoData.properties.cloneInterval = 2000;
-                mosquito.style.transform = 'scale(2)';
-                break;
-            case 3:
-                // 3号蚊子：带血条 + 攻击能力
-                mosquitoData.properties.health = true;
-                mosquitoData.properties.maxHealth = 100;
-                mosquitoData.properties.currentHealth = 100;
-                mosquitoData.properties.attack = true;
-                mosquitoData.properties.attackInterval = 10000;
-                addHealthBar(mosquito, 100);
-                break;
-            case 4:
-                // 4号蚊子：加血能力，尺寸1.5倍
-                mosquitoData.properties.heal = true;
-                mosquitoData.properties.healInterval = 2000;
-                mosquito.style.transform = 'scale(1.5)';
-                break;
-            case 5:
-                // 5号蚊子：无属性
-                break;
+    // 获取当前轮次的配置，如果没有则使用第8轮配置
+    const config = levelConfigs[gameState.level] || levelConfigs[8];
+    
+    // 根据配置生成蚊子
+    for (let mosquitoId = 1; mosquitoId <= 5; mosquitoId++) {
+        const count = config[mosquitoId] || 0;
+        for (let i = 0; i < count; i++) {
+            const mosquitoData = createMosquito(mosquitoId);
+            gameState.mosquitoes.push(mosquitoData);
         }
-        
-        gameState.mosquitoes.push(mosquitoData);
     }
     
     updateRadarDots();
@@ -1210,6 +1232,7 @@ function restartGame() {
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     updatePowerBar();
     updateLevel();
+    updateBackground();
     updatePlayerHealth();
     spawnMosquitoes();
     

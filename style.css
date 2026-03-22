@@ -423,6 +423,9 @@ html, body {
     position: relative;
     overflow: hidden;
     min-height: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 /* 轨迹画布 */
