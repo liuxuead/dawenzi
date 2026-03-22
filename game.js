@@ -191,9 +191,9 @@ function spawnMosquitoes() {
         switch (i + 1) {
             case 1:
                 // 1号蚊子：快速飞行
-                mosquitoData.properties.speed = 2;
-                mosquitoData.vx *= 2;
-                mosquitoData.vy *= 2;
+                mosquitoData.properties.speed = 3;
+                mosquitoData.vx *= 3;
+                mosquitoData.vy *= 3;
                 break;
             case 2:
                 // 2号蚊子：分身能力，尺寸2倍
@@ -203,10 +203,12 @@ function spawnMosquitoes() {
                 mosquito.style.transform = 'scale(2)';
                 break;
             case 3:
-                // 3号蚊子：带血条
+                // 3号蚊子：带血条 + 攻击能力
                 mosquitoData.properties.health = true;
                 mosquitoData.properties.maxHealth = 100;
                 mosquitoData.properties.currentHealth = 100;
+                mosquitoData.properties.attack = true;
+                mosquitoData.properties.attackInterval = 10000;
                 addHealthBar(mosquito, 100);
                 break;
             case 4:
@@ -310,6 +312,23 @@ function startMosquitoAbilities() {
             }
         });
     }, 10000);
+    
+    // 3号蚊子：攻击能力（每10秒发射攻击子弹）
+    setInterval(() => {
+        gameState.mosquitoes.forEach(m => {
+            if (m.properties.attack && m.id === 3 && m.element.style.opacity !== '0') {
+                mosquitoAttack(m);
+            }
+        });
+    }, 10000);
+    
+    // 玩家血量自动回复（每秒回复2点）
+    setInterval(() => {
+        if (gameState.playerHealth < gameState.maxPlayerHealth) {
+            gameState.playerHealth = Math.min(gameState.playerHealth + 2, gameState.maxPlayerHealth);
+            updatePlayerHealth();
+        }
+    }, 1000);
 }
 
 // 克隆蚊子（2号蚊子分身，可以分任何蚊子）
@@ -423,6 +442,85 @@ function updateHealthBar(mosquito) {
         const healthPercent = (mosquito.properties.currentHealth / mosquito.properties.maxHealth) * 100;
         healthFill.style.width = healthPercent + '%';
     }
+}
+
+// 蚊子攻击功能（3号蚊子攻击炮台）
+function mosquitoAttack(attacker) {
+    const attackerRect = attacker.element.getBoundingClientRect();
+    const gameAreaRect = gameArea.getBoundingClientRect();
+    
+    // 计算起始位置（蚊子位置）
+    const startX = attackerRect.left + attackerRect.width / 2;
+    const startY = attackerRect.top + attackerRect.height / 2;
+    
+    // 计算目标位置（炮台位置）
+    const cannonBase = document.querySelector('.cannon-base');
+    const cannonRect = cannonBase.getBoundingClientRect();
+    const targetX = cannonRect.left + cannonRect.width / 2;
+    const targetY = cannonRect.top + cannonRect.height / 2;
+    
+    // 计算飞行角度
+    const dx = targetX - startX;
+    const dy = targetY - startY;
+    const angle = Math.atan2(dy, dx);
+    
+    // 创建攻击子弹（明显区分：紫色圆形）
+    const bullet = document.createElement('div');
+    bullet.className = 'mosquito-bullet';
+    bullet.style.position = 'absolute';
+    bullet.style.left = startX + 'px';
+    bullet.style.top = startY + 'px';
+    bullet.style.width = '12px';
+    bullet.style.height = '12px';
+    bullet.style.background = 'radial-gradient(circle, #9C27B0, #7B1FA2)';
+    bullet.style.borderRadius = '50%';
+    bullet.style.border = '2px solid #E1BEE7';
+    bullet.style.zIndex = '999';
+    bullet.style.pointerEvents = 'none';
+    bullet.style.boxShadow = '0 0 8px #9C27B0';
+    
+    document.body.appendChild(bullet);
+    
+    let currentX = startX;
+    let currentY = startY;
+    const speed = 8;
+    
+    const flyInterval = setInterval(() => {
+        currentX += Math.cos(angle) * speed;
+        currentY += Math.sin(angle) * speed;
+        
+        bullet.style.left = currentX + 'px';
+        bullet.style.top = currentY + 'px';
+        
+        // 检测是否击中炮台
+        const bulletRect = bullet.getBoundingClientRect();
+        if (isColliding(bulletRect, cannonRect)) {
+            clearInterval(flyInterval);
+            bullet.remove();
+            
+            // 扣除玩家血量
+            gameState.playerHealth = Math.max(0, gameState.playerHealth - 10);
+            updatePlayerHealth();
+            
+            // 炮台受击效果
+            cannonBase.style.filter = 'brightness(2) drop-shadow(0 0 10px #f44336)';
+            setTimeout(() => {
+                cannonBase.style.filter = '';
+            }, 300);
+            
+            // 检查玩家是否死亡
+            if (gameState.playerHealth <= 0) {
+                showGameOver();
+            }
+        }
+        
+        // 检测是否超出屏幕
+        if (currentX < -20 || currentX > window.innerWidth + 20 ||
+            currentY < -20 || currentY > window.innerHeight + 20) {
+            clearInterval(flyInterval);
+            bullet.remove();
+        }
+    }, 20);
 }
 
 // 点击时间记录
