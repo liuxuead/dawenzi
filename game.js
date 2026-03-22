@@ -225,7 +225,12 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.speed = 6;
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 15000;
-            mosquitoData.properties.lastAttackTime = Date.now() + initialAttackDelay;
+            // 第1轮立即攻击，其他轮次按延迟时间
+            if (gameState.level === 1) {
+                mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
+            } else {
+                mosquitoData.properties.lastAttackTime = Date.now() + initialAttackDelay;
+            }
             mosquitoData.vx *= 6;
             mosquitoData.vy *= 6;
             break;
@@ -241,7 +246,12 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.currentHealth = 100;
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 10000;
-            mosquitoData.properties.lastAttackTime = Date.now() + initialAttackDelay;
+            // 第1轮立即攻击，其他轮次按延迟时间
+            if (gameState.level === 1) {
+                mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
+            } else {
+                mosquitoData.properties.lastAttackTime = Date.now() + initialAttackDelay;
+            }
             addHealthBar(mosquito, 100);
             break;
         case 4:
@@ -455,7 +465,8 @@ function cloneMosquito(cloner) {
             // 继承攻击属性（如果是3号蚊子）
             attack: targetMosquito.properties.attack || false,
             attackInterval: targetMosquito.properties.attackInterval || 10000,
-            lastAttackTime: Date.now() + cloneInitialAttackDelay
+            // 第1轮立即攻击，其他轮次按延迟时间
+            lastAttackTime: gameState.level === 1 ? 0 : (Date.now() + cloneInitialAttackDelay)
         }
     };
     
