@@ -12,7 +12,8 @@ const gameState = {
     score: 0,
     highScore: parseInt(localStorage.getItem('highScore')) || 0,
     powerTimer: null,
-    healthTimer: null
+    healthTimer: null,
+    gameOverReason: null
 };
 
 // 蚊子分数配置
@@ -1270,6 +1271,9 @@ function showGameOver(reason = 'win') {
         return;
     }
     
+    // 记录游戏结束原因
+    gameState.gameOverReason = reason;
+    
     gameOverModal.style.display = 'flex';
     // 停止背景音乐
     pauseBGM();
@@ -1320,7 +1324,10 @@ function restartGame() {
     gameOverModal.style.display = 'none';
     // 重置游戏状态（保持level不变，因为showGameOver已经设置了正确的level）
     gameState.cannonAngle = -90;
-    gameState.playerHealth = gameState.maxPlayerHealth; // 恢复血量
+    // 只有血条空了才补满血量，正常过关时保持当前血量
+    if (gameState.gameOverReason === 'lose') {
+        gameState.playerHealth = gameState.maxPlayerHealth; // 恢复血量
+    }
     gameState.power = 50; // 重置电力
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     updatePowerBar();
