@@ -191,9 +191,9 @@ function spawnMosquitoes() {
         switch (i + 1) {
             case 1:
                 // 1号蚊子：快速飞行
-                mosquitoData.properties.speed = 3;
-                mosquitoData.vx *= 3;
-                mosquitoData.vy *= 3;
+                mosquitoData.properties.speed = 6;
+                mosquitoData.vx *= 6;
+                mosquitoData.vy *= 6;
                 break;
             case 2:
                 // 2号蚊子：分身能力，尺寸2倍
