@@ -291,13 +291,13 @@ function createMosquito(mosquitoId) {
         case 1:
             mosquitoData.properties.speed = 6;
             mosquitoData.properties.attack = true;
-            mosquitoData.properties.attackInterval = 10000;
+            mosquitoData.properties.attackInterval = 5000;
             mosquitoData.properties.attackDamage = 15;
-            // 第1轮立即攻击，其他轮次按延迟时间
+            // 第1轮立即攻击，其他轮次从0开始计时
             if (gameState.level === 1) {
                 mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
             } else {
-                mosquitoData.properties.lastAttackTime = Date.now() + initialAttackDelay;
+                mosquitoData.properties.lastAttackTime = Date.now(); // 从现在开始计时
             }
             mosquitoData.vx *= 6;
             mosquitoData.vy *= 6;
@@ -313,13 +313,13 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.maxHealth = 100;
             mosquitoData.properties.currentHealth = 100;
             mosquitoData.properties.attack = true;
-            mosquitoData.properties.attackInterval = 5000;
+            mosquitoData.properties.attackInterval = 2000;
             mosquitoData.properties.attackDamage = 20;
-            // 第1轮立即攻击，其他轮次按延迟时间
+            // 第1轮立即攻击，其他轮次从0开始计时
             if (gameState.level === 1) {
                 mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
             } else {
-                mosquitoData.properties.lastAttackTime = Date.now() + initialAttackDelay;
+                mosquitoData.properties.lastAttackTime = Date.now(); // 从现在开始计时
             }
             addHealthBar(mosquito, 100);
             break;
@@ -535,8 +535,8 @@ function cloneMosquito(cloner) {
             attack: targetMosquito.properties.attack || false,
             attackInterval: targetMosquito.properties.attackInterval || 10000,
             attackDamage: targetMosquito.properties.attackDamage || 10,
-            // 第1轮立即攻击，其他轮次按延迟时间
-            lastAttackTime: gameState.level === 1 ? 0 : (Date.now() + cloneInitialAttackDelay)
+            // 第1轮立即攻击，其他轮次从0开始计时
+            lastAttackTime: gameState.level === 1 ? 0 : Date.now()
         }
     };
     
