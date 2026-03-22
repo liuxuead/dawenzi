@@ -291,7 +291,8 @@ function createMosquito(mosquitoId) {
         case 1:
             mosquitoData.properties.speed = 6;
             mosquitoData.properties.attack = true;
-            mosquitoData.properties.attackInterval = 15000;
+            mosquitoData.properties.attackInterval = 10000;
+            mosquitoData.properties.attackDamage = 15;
             // 第1轮立即攻击，其他轮次按延迟时间
             if (gameState.level === 1) {
                 mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
@@ -312,7 +313,8 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.maxHealth = 100;
             mosquitoData.properties.currentHealth = 100;
             mosquitoData.properties.attack = true;
-            mosquitoData.properties.attackInterval = 10000;
+            mosquitoData.properties.attackInterval = 5000;
+            mosquitoData.properties.attackDamage = 20;
             // 第1轮立即攻击，其他轮次按延迟时间
             if (gameState.level === 1) {
                 mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
@@ -532,15 +534,16 @@ function cloneMosquito(cloner) {
             // 继承攻击属性（如果是3号蚊子）
             attack: targetMosquito.properties.attack || false,
             attackInterval: targetMosquito.properties.attackInterval || 10000,
+            attackDamage: targetMosquito.properties.attackDamage || 10,
             // 第1轮立即攻击，其他轮次按延迟时间
             lastAttackTime: gameState.level === 1 ? 0 : (Date.now() + cloneInitialAttackDelay)
         }
     };
     
-    // 如果是1号蚊子，使用原始1号蚊子的速度（vx *= 3）
+    // 如果是1号蚊子，使用原始1号蚊子的速度（vx *= 6）
     if (targetMosquito.id === 1) {
-        cloneData.vx *= 3;
-        cloneData.vy *= 3;
+        cloneData.vx *= 6;
+        cloneData.vy *= 6;
     }
     
     gameState.mosquitoes.push(cloneData);
@@ -644,8 +647,9 @@ function mosquitoAttack(attacker) {
             clearInterval(flyInterval);
             bullet.remove();
             
-            // 扣除玩家血量
-            gameState.playerHealth = Math.max(0, gameState.playerHealth - 10);
+            // 扣除玩家血量（根据蚊子的攻击伤害）
+            const damage = attacker.properties.attackDamage || 10;
+            gameState.playerHealth = Math.max(0, gameState.playerHealth - damage);
             updatePlayerHealth();
             
             // 炮台受击效果
