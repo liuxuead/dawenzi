@@ -372,7 +372,7 @@ function cloneMosquito(cloner) {
     
     gameArea.appendChild(clone);
     
-    // 克隆蚊子数据
+    // 克隆蚊子数据 - 继承原始蚊子的所有属性
     const cloneData = {
         element: clone,
         id: targetMosquito.id,
@@ -387,14 +387,17 @@ function cloneMosquito(cloner) {
             heal: false,
             hasCloned: true,
             maxHealth: targetMosquito.properties.maxHealth,
-            currentHealth: targetMosquito.properties.maxHealth || 100
+            currentHealth: targetMosquito.properties.maxHealth || 100,
+            // 继承攻击属性（如果是3号蚊子）
+            attack: targetMosquito.properties.attack || false,
+            attackInterval: targetMosquito.properties.attackInterval || 10000
         }
     };
     
-    // 如果是1号蚊子，速度翻倍
+    // 如果是1号蚊子，使用原始1号蚊子的速度（vx *= 3）
     if (targetMosquito.id === 1) {
-        cloneData.vx *= 2;
-        cloneData.vy *= 2;
+        cloneData.vx *= 3;
+        cloneData.vy *= 3;
     }
     
     gameState.mosquitoes.push(cloneData);
