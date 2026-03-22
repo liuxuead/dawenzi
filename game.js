@@ -94,8 +94,21 @@ function updateLevel() {
 function updateBackground() {
     const gameArea = document.getElementById('gameArea');
     if (gameArea) {
-        const bgImage = `background${gameState.level}.jpg`;
-        gameArea.style.backgroundImage = `url('${bgImage}')`;
+        // 当轮如果没有背景图片，就默认用第一轮的
+        let bgImage = `background${gameState.level}.jpg`;
+        
+        // 创建临时图片对象来检测文件是否存在
+        const img = new Image();
+        img.onload = function() {
+            // 图片存在，使用当前轮次的背景
+            gameArea.style.backgroundImage = `url('${bgImage}')`;
+        };
+        img.onerror = function() {
+            // 图片不存在，使用第一轮的背景
+            bgImage = 'background1.jpg';
+            gameArea.style.backgroundImage = `url('${bgImage}')`;
+        };
+        img.src = bgImage;
     }
 }
 
@@ -1222,6 +1235,18 @@ function showGameOver() {
     meizidanSound.onended = null;
     // 保存最高分数
     saveHighScore();
+    // 重置游戏状态（除了最高分）
+    gameState.level = 1;
+    gameState.score = 0;
+    gameState.playerHealth = gameState.maxPlayerHealth;
+    gameState.power = 50;
+    gameState.cannonAngle = -90;
+    updateScore();
+    updatePlayerHealth();
+    updatePowerBar();
+    if (cannonBarrel) {
+        cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
+    }
 }
 
 // 重新开始游戏
@@ -1229,7 +1254,6 @@ function restartGame() {
     gameOverModal.style.display = 'none';
     // 不补满电力
     gameState.cannonAngle = -90;
-    gameState.level++; // 等级提升
     gameState.playerHealth = gameState.maxPlayerHealth; // 恢复血量
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     updatePowerBar();
