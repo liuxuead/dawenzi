@@ -216,6 +216,7 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.speed = 6;
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 15000;
+            mosquitoData.properties.lastAttackTime = 0;
             mosquitoData.vx *= 6;
             mosquitoData.vy *= 6;
             break;
@@ -231,6 +232,7 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.currentHealth = 100;
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 10000;
+            mosquitoData.properties.lastAttackTime = 0;
             addHealthBar(mosquito, 100);
             break;
         case 4:
@@ -352,12 +354,16 @@ function startMosquitoAbilities() {
     
     // 蚊子攻击能力（根据攻击间隔发射攻击子弹）
     setInterval(() => {
+        const now = Date.now();
         gameState.mosquitoes.forEach(m => {
             if (m.properties.attack && m.element.style.opacity !== '0') {
-                mosquitoAttack(m);
+                if (now - (m.properties.lastAttackTime || 0) >= m.properties.attackInterval) {
+                    mosquitoAttack(m);
+                    m.properties.lastAttackTime = now;
+                }
             }
         });
-    }, 5000);
+    }, 1000);
     
     // 玩家血量自动回复（每秒回复2点）
     setInterval(() => {
@@ -550,7 +556,7 @@ function mosquitoAttack(attacker) {
             
             // 检查玩家是否死亡
             if (gameState.playerHealth <= 0) {
-                showGameOver();
+                showGameOver('lose');
             }
         }
         
@@ -1225,7 +1231,7 @@ function createBullet() {
 }
 
 // 显示游戏结束弹窗
-function showGameOver() {
+function showGameOver(reason = 'win') {
     gameOverModal.style.display = 'flex';
     // 停止背景音乐
     pauseBGM();
@@ -1235,6 +1241,21 @@ function showGameOver() {
     meizidanSound.onended = null;
     // 保存最高分数
     saveHighScore();
+    
+    // 根据游戏结束原因设置不同的提示信息
+    const gameOverText = document.querySelector('#gameOverModal .modal-content h2');
+    const gameOverMessage = document.querySelector('#gameOverModal .modal-content p');
+    
+    if (reason === 'lose') {
+        // 血量为空的情况
+        if (gameOverText) gameOverText.textContent = '游戏结束';
+        if (gameOverMessage) gameOverMessage.textContent = '是否重新再来？';
+    } else {
+        // 消灭所有蚊子的情况
+        if (gameOverText) gameOverText.textContent = '恭喜！全部消灭！';
+        if (gameOverMessage) gameOverMessage.textContent = '点击按钮重新开始';
+    }
+    
     // 重置游戏状态（除了最高分）
     gameState.level = 1;
     gameState.score = 0;
@@ -1252,12 +1273,16 @@ function showGameOver() {
 // 重新开始游戏
 function restartGame() {
     gameOverModal.style.display = 'none';
-    // 不补满电力
+    // 重置游戏状态到初始值
+    gameState.level = 1;
+    gameState.score = 0;
     gameState.cannonAngle = -90;
     gameState.playerHealth = gameState.maxPlayerHealth; // 恢复血量
+    gameState.power = 50; // 重置电力
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     updatePowerBar();
     updateLevel();
+    updateScore();
     updateBackground();
     updatePlayerHealth();
     spawnMosquitoes();
