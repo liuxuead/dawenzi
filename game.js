@@ -16,6 +16,52 @@ const gameState = {
     gameOverReason: null
 };
 
+// 图片预加载函数
+function preloadImages(imageUrls) {
+    return new Promise((resolve, reject) => {
+        if (!imageUrls || imageUrls.length === 0) {
+            resolve();
+            return;
+        }
+        
+        let loadedCount = 0;
+        const totalCount = imageUrls.length;
+        
+        imageUrls.forEach(url => {
+            const img = new Image();
+            img.onload = () => {
+                loadedCount++;
+                if (loadedCount === totalCount) {
+                    resolve();
+                }
+            };
+            img.onerror = () => {
+                console.warn(`Failed to load image: ${url}`);
+                loadedCount++;
+                if (loadedCount === totalCount) {
+                    resolve();
+                }
+            };
+            img.src = url;
+        });
+    });
+}
+
+// 加载指定轮次的图片
+function loadLevelImages(level) {
+    const images = [];
+    
+    // 背景图片
+    images.push(`background${level}.jpg`);
+    
+    // 蚊子图片
+    for (let i = 1; i <= 5; i++) {
+        images.push(`wenzi${i}.png`);
+    }
+    
+    return preloadImages(images);
+}
+
 // 蚊子分数配置
 const mosquitoScores = {
     1: 20,
@@ -40,6 +86,7 @@ const gameArea = document.getElementById('gameArea');
 const cannonBarrel = document.getElementById('cannonBarrel');
 const gameOverModal = document.getElementById('gameOverModal');
 const restartBtn = document.getElementById('restartBtn');
+const loadingModal = document.getElementById('loadingModal');
 const zapperSound = document.getElementById('zapperSound');
 const meizidanSound = document.getElementById('meizidanSound');
 const bgmSound = document.getElementById('bgmSound');
@@ -62,8 +109,27 @@ function startPowerCharging() {
 }
 
 // 初始化
-function init() {
+async function init() {
     console.log('Game init started');
+    
+    // 显示加载界面
+    if (loadingModal) {
+        loadingModal.style.display = 'flex';
+    }
+    
+    try {
+        // 预加载当前轮次的图片
+        await loadLevelImages(gameState.level);
+        console.log('Images loaded successfully');
+    } catch (error) {
+        console.warn('Error loading images:', error);
+    } finally {
+        // 隐藏加载界面
+        if (loadingModal) {
+            loadingModal.style.display = 'none';
+        }
+    }
+    
     initCanvas();
     updateBackground();
     updatePowerBar();
@@ -1287,15 +1353,18 @@ function showGameOver(reason = 'win') {
     // 根据游戏结束原因设置不同的提示信息
     const gameOverText = document.querySelector('#gameOverModal .modal-content h2');
     const gameOverMessage = document.querySelector('#gameOverModal .modal-content p');
+    const restartButton = document.querySelector('#gameOverModal .modal-content button');
     
     if (reason === 'lose') {
         // 血量为空的情况
         if (gameOverText) gameOverText.textContent = '游戏结束';
         if (gameOverMessage) gameOverMessage.textContent = '是否重新再来？';
+        if (restartButton) restartButton.textContent = '重新开始';
     } else {
         // 消灭所有蚊子的情况
         if (gameOverText) gameOverText.textContent = '恭喜！全部消灭！';
         if (gameOverMessage) gameOverMessage.textContent = '点击按钮进入下一关';
+        if (restartButton) restartButton.textContent = '进入下一关';
     }
     
     // 重置游戏状态（除了最高分）
@@ -1317,10 +1386,20 @@ function showGameOver(reason = 'win') {
     if (cannonBarrel) {
         cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     }
+    
+    // 预加载下一轮的图片（边玩边加载）
+    if (reason !== 'lose') {
+        const nextLevel = gameState.level;
+        loadLevelImages(nextLevel).then(() => {
+            console.log('Preloaded images for level', nextLevel);
+        }).catch(error => {
+            console.warn('Error preloading images for next level:', error);
+        });
+    }
 }
 
 // 重新开始游戏
-function restartGame() {
+async function restartGame() {
     gameOverModal.style.display = 'none';
     // 重置游戏状态（保持level不变，因为showGameOver已经设置了正确的level）
     gameState.cannonAngle = -90;
@@ -1333,8 +1412,27 @@ function restartGame() {
     updatePowerBar();
     updateLevel();
     updateScore();
-    updateBackground();
     updatePlayerHealth();
+    
+    // 显示加载界面
+    if (loadingModal) {
+        loadingModal.style.display = 'flex';
+    }
+    
+    try {
+        // 预加载当前轮次的图片
+        await loadLevelImages(gameState.level);
+        console.log('Images loaded successfully for level', gameState.level);
+    } catch (error) {
+        console.warn('Error loading images:', error);
+    } finally {
+        // 隐藏加载界面
+        if (loadingModal) {
+            loadingModal.style.display = 'none';
+        }
+    }
+    
+    updateBackground();
     spawnMosquitoes();
     
     // 清除所有轨迹线
