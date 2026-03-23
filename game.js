@@ -475,7 +475,7 @@ function startMosquitoAbilities() {
     // 玩家血量自动回复（每秒回复2点）
     gameState.healthTimer = setInterval(() => {
         if (gameState.playerHealth < gameState.maxPlayerHealth) {
-            gameState.playerHealth = Math.min(gameState.playerHealth + 2, gameState.maxPlayerHealth);
+            gameState.playerHealth = Math.min(gameState.playerHealth + 5, gameState.maxPlayerHealth);
             updatePlayerHealth();
         }
     }, 1000);
@@ -1255,6 +1255,8 @@ function createBullet() {
         let hit = false;
         let hitMosquito = null;
         
+        // 收集所有被击中的蚊子
+        const hitMosquitoes = [];
         gameState.mosquitoes.forEach(m => {
             const mosquitoRect = m.element.getBoundingClientRect();
             
@@ -1264,51 +1266,58 @@ function createBullet() {
                 bulletRect.top < mosquitoRect.bottom &&
                 bulletRect.bottom > mosquitoRect.top) {
                 
-                // 击中蚊子
-                hit = true;
-                hitMosquito = m;
+                hitMosquitoes.push(m);
+            }
+        });
+        
+        // 如果击中多个蚊子，随机选择一个
+        if (hitMosquitoes.length > 0) {
+            hit = true;
+            hitMosquito = hitMosquitoes[Math.floor(Math.random() * hitMosquitoes.length)];
+            
+            // 处理被击中的蚊子
+            const m = hitMosquito;
+            
+            // 检查是否是3号蚊子（有血条）
+            if (m.properties.health) {
+                // 每次减少50点血量（打两下消失）
+                m.properties.currentHealth -= 50;
+                updateHealthBar(m);
                 
-                // 检查是否是3号蚊子（有血条）
-                if (m.properties.health) {
-                    // 每次减少50点血量（打两下消失）
-                    m.properties.currentHealth -= 50;
-                    updateHealthBar(m);
-                    
-                    // 播放电击音效
-                    pauseBGM();
-                    zapperSound.currentTime = 0;
-                    zapperSound.play();
-                    zapperSound.onended = resumeBGM;
-                    
-                    // 检查是否死亡
-                    if (m.properties.currentHealth <= 0) {
-                        m.element.style.transform = 'scale(1.5)';
-                        m.element.style.opacity = '0';
-                        // 添加分数
-                        addScore(m.id);
-                    } else {
-                        // 受伤动画
-                        m.element.style.filter = 'brightness(2)';
-                        setTimeout(() => {
-                            m.element.style.filter = 'brightness(1)';
-                        }, 200);
-                    }
-                } else {
-                    // 普通蚊子直接消灭
+                // 播放电击音效
+                pauseBGM();
+                zapperSound.currentTime = 0;
+                zapperSound.play();
+                zapperSound.onended = resumeBGM;
+                
+                // 检查是否死亡
+                if (m.properties.currentHealth <= 0) {
                     m.element.style.transform = 'scale(1.5)';
                     m.element.style.opacity = '0';
                     // 添加分数
                     addScore(m.id);
-                    
-                    // 暂停背景音乐，播放电击音效
-                    pauseBGM();
-                    zapperSound.currentTime = 0;
-                    zapperSound.play();
-                    // 音效结束后恢复背景音乐
-                    zapperSound.onended = resumeBGM;
+                } else {
+                    // 受伤动画
+                    m.element.style.filter = 'brightness(2)';
+                    setTimeout(() => {
+                        m.element.style.filter = 'brightness(1)';
+                    }, 200);
                 }
+            } else {
+                // 普通蚊子直接消灭
+                m.element.style.transform = 'scale(1.5)';
+                m.element.style.opacity = '0';
+                // 添加分数
+                addScore(m.id);
+                
+                // 暂停背景音乐，播放电击音效
+                pauseBGM();
+                zapperSound.currentTime = 0;
+                zapperSound.play();
+                // 音效结束后恢复背景音乐
+                zapperSound.onended = resumeBGM;
             }
-        });
+        }
         
         // 如果击中蚊子，移除该蚊子
         if (hitMosquito) {
@@ -1451,19 +1460,52 @@ async function restartGame() {
     }
     
     updateBackground();
-    spawnMosquitoes();
     
     // 清除所有轨迹线
     while (trailSvg.firstChild) {
         trailSvg.removeChild(trailSvg.firstChild);
     }
     
-    // 重新开始电力自动增长
-    startPowerCharging();
+    // 如果是过关（非失败），显示准备界面等待点击
+    if (gameState.gameOverReason !== 'lose') {
+        showReadyModal();
+    } else {
+        // 失败重开直接生成蚊子
+        spawnMosquitoes();
+        // 重新开始电力自动增长
+        startPowerCharging();
+        // 重新开始背景音乐
+        bgmStarted = true;
+        resumeBGM();
+    }
+}
+
+// 显示准备界面
+function showReadyModal() {
+    // 创建准备界面
+    const readyModal = document.createElement('div');
+    readyModal.id = 'readyModal';
+    readyModal.className = 'game-over-modal';
+    readyModal.style.display = 'flex';
+    readyModal.innerHTML = `
+        <div class="modal-content">
+            <h2>第 ${gameState.level} 关</h2>
+            <p>点击开始游戏</p>
+            <button class="restart-btn" id="startLevelBtn">开始</button>
+        </div>
+    `;
+    document.body.appendChild(readyModal);
     
-    // 重新开始背景音乐
-    bgmStarted = true;
-    resumeBGM();
+    // 绑定开始按钮事件
+    document.getElementById('startLevelBtn').addEventListener('click', () => {
+        readyModal.remove();
+        spawnMosquitoes();
+        // 重新开始电力自动增长
+        startPowerCharging();
+        // 重新开始背景音乐
+        bgmStarted = true;
+        resumeBGM();
+    });
 }
 
 // 矩形碰撞检测
