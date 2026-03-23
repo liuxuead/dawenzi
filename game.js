@@ -91,7 +91,6 @@ const zapperSound = document.getElementById('zapperSound');
 const meizidanSound = document.getElementById('meizidanSound');
 const bgmSound = document.getElementById('bgmSound');
 const trailSvg = document.getElementById('trailSvg');
-const missileIcon = document.getElementById('missileIcon');
 
 // 开始电力自动增长
 function startPowerCharging() {
@@ -227,12 +226,34 @@ function updatePowerBar() {
         powerFill.style.width = (gameState.power / gameState.maxPower * 100) + '%';
     }
     
-    // 电力达到1/3时显示飞弹图标，否则隐藏
-    if (missileIcon) {
-        if (gameState.power >= gameState.maxPower / 3) {
-            missileIcon.classList.add('visible');
+    // 根据电力值显示不同数量的飞弹图标
+    const missileIcon1 = document.getElementById('missileIcon1');
+    const missileIcon2 = document.getElementById('missileIcon2');
+    const missileIcon3 = document.getElementById('missileIcon3');
+    
+    const powerRatio = gameState.power / gameState.maxPower;
+    
+    if (missileIcon1) {
+        if (powerRatio >= 1/3) {
+            missileIcon1.classList.add('visible');
         } else {
-            missileIcon.classList.remove('visible');
+            missileIcon1.classList.remove('visible');
+        }
+    }
+    
+    if (missileIcon2) {
+        if (powerRatio >= 2/3) {
+            missileIcon2.classList.add('visible');
+        } else {
+            missileIcon2.classList.remove('visible');
+        }
+    }
+    
+    if (missileIcon3) {
+        if (powerRatio >= 1) {
+            missileIcon3.classList.add('visible');
+        } else {
+            missileIcon3.classList.remove('visible');
         }
     }
 }
@@ -314,7 +335,7 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.currentHealth = 100;
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 2000;
-            mosquitoData.properties.attackDamage = 20;
+            mosquitoData.properties.attackDamage = 10;
             // 第1轮立即攻击，其他轮次从0开始计时
             if (gameState.level === 1) {
                 mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
@@ -329,6 +350,16 @@ function createMosquito(mosquitoId) {
             mosquito.style.transform = 'scale(1.5)';
             break;
         case 5:
+            mosquitoData.properties.stealth = true;
+            mosquitoData.properties.attack = true;
+            mosquitoData.properties.attackDamage = 5;
+            mosquitoData.properties.attackInterval = 5000;
+            // 第1轮立即攻击，其他轮次从0开始计时
+            if (gameState.level === 1) {
+                mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
+            } else {
+                mosquitoData.properties.lastAttackTime = Date.now(); // 从现在开始计时
+            }
             break;
     }
     
@@ -479,6 +510,51 @@ function startMosquitoAbilities() {
             updatePlayerHealth();
         }
     }, 1000);
+    
+    // 5号蚊子：隐身能力（现身5秒，隐身2秒，隐身前呼吸1秒）
+    gameState.mosquitoes.forEach(m => {
+        if (m.properties.stealth && m.element.style.opacity !== '0') {
+            startStealthAbility(m);
+        }
+    });
+}
+
+// 5号蚊子：隐身能力
+function startStealthAbility(mosquito) {
+    // 初始状态：现身
+    let isStealth = false;
+    
+    function toggleStealth() {
+        if (mosquito.element.style.opacity === '0' || !mosquito.element.parentNode) {
+            return;
+        }
+        
+        if (!isStealth) {
+            // 准备隐身：呼吸状态1秒
+            mosquito.element.style.animation = 'breathing 1s ease-in-out infinite';
+            
+            setTimeout(() => {
+                mosquito.element.style.animation = '';
+                // 进入隐身状态（2秒）
+                isStealth = true;
+                mosquito.element.style.opacity = '0';
+                
+                setTimeout(() => {
+                    if (mosquito.element.style.opacity === '0' || !mosquito.element.parentNode) {
+                        return;
+                    }
+                    // 结束隐身：现身（5秒）
+                    isStealth = false;
+                    mosquito.element.style.opacity = '1';
+                    
+                    setTimeout(toggleStealth, 5000);
+                }, 2000);
+            }, 1000);
+        }
+    }
+    
+    // 开始隐身循环
+    toggleStealth();
 }
 
 // 克隆蚊子（2号蚊子分身，可以分任何蚊子）
@@ -542,10 +618,11 @@ function cloneMosquito(cloner) {
             clone: false,
             health: targetMosquito.properties.health,
             heal: false,
+            stealth: targetMosquito.properties.stealth || false,
             hasCloned: true,
             maxHealth: targetMosquito.properties.maxHealth,
             currentHealth: targetMosquito.properties.maxHealth || 100,
-            // 继承攻击属性（如果是3号蚊子）
+            // 继承攻击属性
             attack: targetMosquito.properties.attack || false,
             attackInterval: targetMosquito.properties.attackInterval || 10000,
             attackDamage: targetMosquito.properties.attackDamage || 10,
@@ -561,6 +638,11 @@ function cloneMosquito(cloner) {
     }
     
     gameState.mosquitoes.push(cloneData);
+    
+    // 如果是5号蚊子的分身，启动隐身能力
+    if (cloneData.properties.stealth) {
+        startStealthAbility(cloneData);
+    }
 }
 
 // 加血功能（4号蚊子给3号加血，补满血量）
