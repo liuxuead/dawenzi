@@ -525,32 +525,37 @@ function startStealthAbility(mosquito) {
     let isStealth = false;
     
     function toggleStealth() {
-        if (mosquito.element.style.opacity === '0' || !mosquito.element.parentNode) {
+        // 只检查蚊子是否存在于DOM中，不检查可见性
+        if (!mosquito.element.parentNode) {
             return;
         }
         
-        if (!isStealth) {
-            // 准备隐身：呼吸状态1秒
-            mosquito.element.style.animation = 'breathing 1s ease-in-out infinite';
+        // 准备隐身：呼吸状态1秒
+        mosquito.element.style.animation = 'breathing 1s ease-in-out infinite';
+        
+        setTimeout(() => {
+            // 只检查蚊子是否存在于DOM中，不检查可见性
+            if (!mosquito.element.parentNode) {
+                return;
+            }
+            
+            mosquito.element.style.animation = '';
+            // 进入隐身状态（2秒）
+            isStealth = true;
+            mosquito.element.style.opacity = '0';
             
             setTimeout(() => {
-                mosquito.element.style.animation = '';
-                // 进入隐身状态（2秒）
-                isStealth = true;
-                mosquito.element.style.opacity = '0';
+                // 只检查蚊子是否存在于DOM中，不检查可见性
+                if (!mosquito.element.parentNode) {
+                    return;
+                }
+                // 结束隐身：现身（5秒）
+                isStealth = false;
+                mosquito.element.style.opacity = '1';
                 
-                setTimeout(() => {
-                    if (mosquito.element.style.opacity === '0' || !mosquito.element.parentNode) {
-                        return;
-                    }
-                    // 结束隐身：现身（5秒）
-                    isStealth = false;
-                    mosquito.element.style.opacity = '1';
-                    
-                    setTimeout(toggleStealth, 5000);
-                }, 2000);
-            }, 1000);
-        }
+                setTimeout(toggleStealth, 5000);
+            }, 2000);
+        }, 1000);
     }
     
     // 开始隐身循环
