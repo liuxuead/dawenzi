@@ -142,7 +142,7 @@ function activateLaser() {
         laserLine.style.position = 'absolute';
         laserLine.style.height = '2px';
         laserLine.style.backgroundColor = '#4CAF50';
-        laserLine.style.zIndex = '9999';
+        laserLine.style.zIndex = '999';
         laserLine.style.pointerEvents = 'none';
         laserLine.style.boxShadow = '0 0 10px #4CAF50, 0 0 20px #4CAF50';
         gameArea.appendChild(laserLine);
