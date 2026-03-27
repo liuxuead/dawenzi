@@ -136,7 +136,8 @@ function activateLaser() {
     laserStartTime = Date.now();
     
     // 创建激光瞄准线元素
-    if (!laserLine) {
+    if (!laserLine || !laserLine.parentNode) {
+        // 如果激光线元素不存在或不在DOM中，重新创建
         laserLine = document.createElement('div');
         laserLine.className = 'laser-line';
         laserLine.style.position = 'absolute';
@@ -559,6 +560,14 @@ function createMosquito(mosquitoId) {
 function spawnMosquitoes() {
     gameArea.innerHTML = '';
     gameState.mosquitoes = [];
+    
+    // 重置激光瞄准线变量（因为gameArea.innerHTML会清除激光线元素）
+    laserActive = false;
+    laserLine = null;
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
     
     // 获取当前轮次的配置
     let config;
@@ -1745,11 +1754,23 @@ async function restartGame() {
         gameState.playerHealth = gameState.maxPlayerHealth; // 恢复血量
     }
     gameState.power = 50; // 重置电力
+    gameState.energy = 100; // 重置能量
     cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     updatePowerBar();
+    updateEnergyBar();
     updateLevel();
     updateScore();
     updatePlayerHealth();
+    
+    // 重置激光瞄准线变量
+    laserActive = false;
+    if (laserLine) {
+        laserLine = null;
+    }
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+    }
     
     // 显示加载界面
     if (loadingModal) {
