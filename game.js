@@ -1090,17 +1090,21 @@ function bindEvents() {
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
             return;
         }
-        e.preventDefault();
         const touch = e.touches[0];
         const deltaX = touch.clientX - touchStartX;
         const deltaY = touch.clientY - touchStartY;
         
-        // 计算角度变化（提高灵敏度）
-        const angleChange = deltaX * 0.8;
-        rotateCannon(angleChange);
-        
-        touchStartX = touch.clientX;
-        touchStartY = touch.clientY;
+        // 只有当移动距离超过一定阈值时才阻止默认行为
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+            e.preventDefault();
+            
+            // 计算角度变化（提高灵敏度）
+            const angleChange = deltaX * 0.8;
+            rotateCannon(angleChange);
+            
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
     }, { passive: false });
     
     // 双击炮筒区域充电（绿色按钮功能）
