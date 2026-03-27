@@ -322,11 +322,9 @@ async function init() {
     startEnergyCharging();
     bindEvents();
     initBGM();
-    startPowerCharging();
     
-    // 重置双击检测的时间戳
-    lastTapTime = Date.now();
-    lastFireTime = Date.now();
+    // 调用 restartGame 来确保游戏状态与重新开始后的状态一致
+    await restartGame();
     
     console.log('Game init completed');
 }
