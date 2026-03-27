@@ -323,6 +323,10 @@ async function init() {
     bindEvents();
     initBGM();
     startPowerCharging();
+    
+    // 重置双击检测的时间戳
+    lastTapTime = Date.now();
+    
     console.log('Game init completed');
 }
 
@@ -1775,6 +1779,9 @@ async function restartGame() {
         clearTimeout(longPressTimer);
         longPressTimer = null;
     }
+    
+    // 重置双击检测的时间戳
+    lastTapTime = Date.now();
     
     // 显示加载界面
     if (loadingModal) {
