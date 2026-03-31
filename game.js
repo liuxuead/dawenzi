@@ -2038,23 +2038,56 @@ function createHomingMissile(target) {
             return;
         }
         
+        // 获取目标蚊子位置
         const targetRect = target.element.getBoundingClientRect();
         const targetX = targetRect.left + targetRect.width / 2;
         const targetY = targetRect.top + targetRect.height / 2;
         
-        const dx = targetX - currentX;
-        const dy = targetY - currentY;
-        const targetAngle = Math.atan2(dy, dx);
+        // 计算目标方向
+        let dx = targetX - currentX;
+        let dy = targetY - currentY;
+        let targetAngle = Math.atan2(dy, dx);
         
+        // 避开非目标蚊子
+        let avoidanceAngle = 0;
+        let avoidanceStrength = 0.2;
+        
+        gameState.mosquitoes.forEach(mosquito => {
+            if (mosquito === target || mosquito.element.style.opacity === '0') return;
+            
+            const mosquitoRect = mosquito.element.getBoundingClientRect();
+            const mosquitoX = mosquitoRect.left + mosquitoRect.width / 2;
+            const mosquitoY = mosquitoRect.top + mosquitoRect.height / 2;
+            
+            // 计算与非目标蚊子的距离
+            const distX = mosquitoX - currentX;
+            const distY = mosquitoY - currentY;
+            const distance = Math.sqrt(distX * distX + distY * distY);
+            
+            // 如果距离小于阈值，计算避开角度
+            if (distance < 50) {
+                const avoidanceDist = 50 - distance;
+                const avoidAngle = Math.atan2(distY, distX) + Math.PI; // 相反方向
+                avoidanceAngle += Math.sin(avoidAngle) * (avoidanceDist / 50) * avoidanceStrength;
+            }
+        });
+        
+        // 应用避开角度
+        targetAngle += avoidanceAngle;
+        
+        // 平滑调整角度
         angle += (targetAngle - angle) * turningRate;
         
+        // 更新位置
         currentX += Math.cos(angle) * speed;
         currentY += Math.sin(angle) * speed;
         
+        // 更新追踪弹位置和角度
         missile.style.left = currentX + 'px';
         missile.style.top = currentY + 'px';
         missile.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
         
+        // 检查与目标蚊子的碰撞
         const missileRect = missile.getBoundingClientRect();
         
         if (isColliding(missileRect, targetRect)) {
