@@ -1195,9 +1195,26 @@ function bindEvents() {
             debugInfo.textContent = '';
         }
         
+        // 检查离开的手指位置是否在蚊子活动区域内
+        const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
+        const gameAreaWidth = gameAreaRect.width;
+        const gameAreaHeight = gameAreaRect.height;
+        
+        // 蚊子活动区域边界（与 startMosquitoMovement 函数中保持一致）
+        const mosquitoAreaLeft = gameAreaRect.left + gameAreaWidth * 0.05;
+        const mosquitoAreaRight = gameAreaRect.left + gameAreaWidth * 0.9;
+        const mosquitoAreaTop = gameAreaRect.top + gameAreaHeight * 0.05;
+        const mosquitoAreaBottom = gameAreaRect.top + gameAreaHeight * 0.7;
+        
+        // 检查离开的手指是否在蚊子活动区域内
+        const isInMosquitoArea = leavingPos.x >= mosquitoAreaLeft && 
+                                leavingPos.x <= mosquitoAreaRight && 
+                                leavingPos.y >= mosquitoAreaTop && 
+                                leavingPos.y <= mosquitoAreaBottom;
+        
         // 多指模式：距离>150px发射追踪飞弹
-        if (distance > 150) {
-            console.log('距离超过150px，发射追踪飞弹，距离:', distance);
+        if (distance > 150 || isInMosquitoArea) {
+            console.log('距离超过150px或点击在蚊子活动区域，发射追踪飞弹，距离:', distance, '是否在活动区域:', isInMosquitoArea);
             
             // 防抖动：300ms内只能发射一次
             if (now - lastFireTime < 300) {
@@ -1214,8 +1231,14 @@ function bindEvents() {
                 return;
             }
             
-            // 找出离两只手指连线最近的蚊子
-            const closestMosquito = findClosestMosquitoToLine(firstTouchPos, leavingPos);
+            let closestMosquito;
+            if (isInMosquitoArea) {
+                // 点击在蚊子活动区域内，找出离点击位置最近的蚊子
+                closestMosquito = findClosestMosquitoToPoint(leavingPos);
+            } else {
+                // 多指滑动，找出离两只手指连线最近的蚊子
+                closestMosquito = findClosestMosquitoToLine(firstTouchPos, leavingPos);
+            }
             
             if (closestMosquito) {
                 // 标记蚊子
@@ -1901,6 +1924,33 @@ function findClosestMosquitoToLine(lineStart, lineEnd) {
         };
         
         const distance = distanceToLineSegment(mosquitoPos, lineStart, lineEnd);
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestMosquito = mosquito;
+        }
+    });
+    
+    return closestMosquito;
+}
+
+// 找出离点击位置最近的蚊子
+function findClosestMosquitoToPoint(point) {
+    let closestMosquito = null;
+    let minDistance = Infinity;
+    
+    gameState.mosquitoes.forEach(mosquito => {
+        if (mosquito.element.style.opacity === '0') return;
+        
+        const rect = mosquito.element.getBoundingClientRect();
+        const mosquitoPos = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        };
+        
+        const dx = mosquitoPos.x - point.x;
+        const dy = mosquitoPos.y - point.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance < minDistance) {
             minDistance = distance;
