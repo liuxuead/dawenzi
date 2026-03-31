@@ -2032,7 +2032,7 @@ function createHomingMissile(target) {
     let turningRate = 0.1;
     
     const flyInterval = setInterval(() => {
-        if (!target || target.element.style.opacity === '0') {
+        if (!target) {
             clearInterval(flyInterval);
             missile.remove();
             return;
@@ -2053,7 +2053,7 @@ function createHomingMissile(target) {
         let avoidanceStrength = 0.2;
         
         gameState.mosquitoes.forEach(mosquito => {
-            if (mosquito === target || mosquito.element.style.opacity === '0') return;
+            if (mosquito === target) return;
             
             const mosquitoRect = mosquito.element.getBoundingClientRect();
             const mosquitoX = mosquitoRect.left + mosquitoRect.width / 2;
