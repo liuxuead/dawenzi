@@ -1541,8 +1541,26 @@ function bindEvents() {
     
     // 鼠标移动时控制炮筒方向
     document.addEventListener('mousemove', (e) => {
+        // 排除按钮区域和炮筒区域
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
             return;
+        }
+        
+        // 检测是否为触摸设备
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        
+        // 在触摸设备上，只在炮筒区域内响应鼠标移动事件
+        if (isTouchDevice) {
+            const cannonSection = document.querySelector('.cannon-section');
+            if (cannonSection) {
+                const cannonRect = cannonSection.getBoundingClientRect();
+                
+                // 检查是否在炮筒区域内（左右各扩展30像素，上下各扩展100像素）
+                if (!(e.clientX >= cannonRect.left - 30 && e.clientX <= cannonRect.right + 30 && 
+                      e.clientY >= cannonRect.top - 100 && e.clientY <= cannonRect.bottom + 100)) {
+                    return;
+                }
+            }
         }
         
         const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
