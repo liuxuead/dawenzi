@@ -317,8 +317,8 @@ async function init() {
     updatePlayerHealth();
     updateLevel();
     updateScore();
-    spawnMosquitoes();
-    startMosquitoMovement();
+    // 移除这里的 spawnMosquitoes() 和 startMosquitoMovement() 调用
+    // 这些应该在用户点击开始后才调用
     startEnergyCharging();
     bindEvents();
     initBGM();
@@ -507,12 +507,8 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 5000;
             mosquitoData.properties.attackDamage = 15;
-            // 第1轮立即攻击，其他轮次从0开始计时
-            if (gameState.level === 1) {
-                mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
-            } else {
-                mosquitoData.properties.lastAttackTime = Date.now(); // 从现在开始计时
-            }
+            // 所有轮次都从现在开始计时，到时间后再攻击
+            mosquitoData.properties.lastAttackTime = Date.now();
             mosquitoData.vx *= 6;
             mosquitoData.vy *= 6;
             break;
@@ -529,12 +525,8 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackInterval = 2000;
             mosquitoData.properties.attackDamage = 10;
-            // 第1轮立即攻击，其他轮次从0开始计时
-            if (gameState.level === 1) {
-                mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
-            } else {
-                mosquitoData.properties.lastAttackTime = Date.now(); // 从现在开始计时
-            }
+            // 所有轮次都从现在开始计时，到时间后再攻击
+            mosquitoData.properties.lastAttackTime = Date.now();
             addHealthBar(mosquito, 100);
             break;
         case 4:
@@ -547,12 +539,8 @@ function createMosquito(mosquitoId) {
             mosquitoData.properties.attack = true;
             mosquitoData.properties.attackDamage = 5;
             mosquitoData.properties.attackInterval = 5000;
-            // 第1轮立即攻击，其他轮次从0开始计时
-            if (gameState.level === 1) {
-                mosquitoData.properties.lastAttackTime = 0; // 设为0，确保立即攻击
-            } else {
-                mosquitoData.properties.lastAttackTime = Date.now(); // 从现在开始计时
-            }
+            // 所有轮次都从现在开始计时，到时间后再攻击
+            mosquitoData.properties.lastAttackTime = Date.now();
             break;
     }
     
@@ -696,7 +684,12 @@ function startMosquitoAbilities() {
         const now = Date.now();
         gameState.mosquitoes.forEach(m => {
             if (m.properties.attack && m.element.style.opacity !== '0') {
-                if (now - (m.properties.lastAttackTime || 0) >= m.properties.attackInterval) {
+                // 确保 lastAttackTime 已初始化
+                if (!m.properties.lastAttackTime) {
+                    m.properties.lastAttackTime = now;
+                    return;
+                }
+                if (now - m.properties.lastAttackTime >= m.properties.attackInterval) {
                     mosquitoAttack(m);
                     m.properties.lastAttackTime = now;
                 }
@@ -1378,6 +1371,10 @@ function bindEvents() {
     });
     
     // PC端鼠标控制
+    let mouseDownTime = 0;
+    let longPressTimer = null;
+    let lastLeftClickTime = 0;
+    
     document.addEventListener('mousedown', (e) => {
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
             return;
@@ -1385,18 +1382,36 @@ function bindEvents() {
         
         const now = Date.now();
         
-        // 鼠标左键：普通发射
+        // 鼠标左键
         if (e.button === 0) {
-            if (now - lastFireTime < 300) {
-                return;
+            // 双击检测：300ms内两次点击
+            if (now - lastLeftClickTime < 300) {
+                // 防抖动：300ms内只能发射一次
+                if (now - lastFireTime < 300) {
+                    return;
+                }
+                lastFireTime = now;
+                
+                startBGMOnFirstInteraction();
+                fire();
             }
-            lastFireTime = now;
+            lastLeftClickTime = now;
             
-            startBGMOnFirstInteraction();
-            fire();
+            // 长按检测：1秒后激活激光瞄准线
+            mouseDownTime = now;
+            longPressTimer = setTimeout(() => {
+                if (gameState.energy >= LASER_COST) {
+                    // 消耗能量
+                    gameState.energy = Math.max(0, gameState.energy - LASER_COST);
+                    updateEnergyBar();
+                    
+                    // 激活激光瞄准线
+                    activateLaser();
+                }
+            }, 1000);
         }
         
-        // 鼠标右键：追踪飞弹
+        // 鼠标右键：发射追踪飞弹
         if (e.button === 2) {
             e.preventDefault();
             
@@ -1413,34 +1428,101 @@ function bindEvents() {
                 return;
             }
             
-            const cannonBase = document.querySelector('.cannon-base');
-            const cannonRect = cannonBase.getBoundingClientRect();
-            const cannonCenter = {
-                x: cannonRect.left + cannonRect.width / 2,
-                y: cannonRect.top + cannonRect.height / 2
+            // 获取鼠标点击位置
+            const clickPos = {
+                x: e.clientX,
+                y: e.clientY
             };
             
-            const angleRad = gameState.cannonAngle * Math.PI / 180;
-            const lineEnd = {
-                x: cannonCenter.x + Math.cos(angleRad) * 1000,
-                y: cannonCenter.y + Math.sin(angleRad) * 1000
-            };
+            // 检查点击位置是否在蚊子活动区域内
+            const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
+            const gameAreaWidth = gameAreaRect.width;
+            const gameAreaHeight = gameAreaRect.height;
             
-            const closestMosquito = findClosestMosquitoToLine(cannonCenter, lineEnd);
+            // 蚊子活动区域边界（与 startMosquitoMovement 函数中保持一致）
+            const mosquitoAreaLeft = gameAreaRect.left + gameAreaWidth * 0.05;
+            const mosquitoAreaRight = gameAreaRect.left + gameAreaWidth * 0.9;
+            const mosquitoAreaTop = gameAreaRect.top + gameAreaHeight * 0.05;
+            const mosquitoAreaBottom = gameAreaRect.top + gameAreaHeight * 0.7;
+            
+            // 检查点击位置是否在蚊子活动区域内
+            const isInMosquitoArea = clickPos.x >= mosquitoAreaLeft && 
+                                    clickPos.x <= mosquitoAreaRight && 
+                                    clickPos.y >= mosquitoAreaTop && 
+                                    clickPos.y <= mosquitoAreaBottom;
+            
+            let closestMosquito;
+            if (isInMosquitoArea) {
+                // 点击在蚊子活动区域内，找出离点击位置最近的蚊子
+                closestMosquito = findClosestMosquitoToPoint(clickPos);
+            } else {
+                // 点击在蚊子活动区域外，使用炮筒指向的方向
+                const cannonBase = document.querySelector('.cannon-base');
+                const cannonRect = cannonBase.getBoundingClientRect();
+                const cannonCenter = {
+                    x: cannonRect.left + cannonRect.width / 2,
+                    y: cannonRect.top + cannonRect.height / 2
+                };
+                
+                // 计算炮筒指向的方向
+                const angleRad = gameState.cannonAngle * Math.PI / 180;
+                const lineEnd = {
+                    x: cannonCenter.x + Math.cos(angleRad) * 1000,
+                    y: cannonCenter.y + Math.sin(angleRad) * 1000
+                };
+                
+                // 找出离炮筒指向方向最近的蚊子
+                closestMosquito = findClosestMosquitoToLine(cannonCenter, lineEnd);
+            }
             
             if (closestMosquito) {
+                // 标记蚊子
                 markMosquito(closestMosquito);
+                
+                // 更新最后发射时间
                 lastFireTime = now;
                 
                 // 消耗1/3电力
                 gameState.power = Math.max(0, gameState.power - gameState.maxPower / 3);
                 updatePowerBar();
                 
+                // 发射追踪飞弹
                 setTimeout(() => {
                     createHomingMissile(closestMosquito);
                 }, 300);
             }
         }
+    });
+    
+    // 鼠标松开时清除长按计时器
+    document.addEventListener('mouseup', (e) => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    });
+    
+    // 鼠标移动时控制炮筒方向
+    document.addEventListener('mousemove', (e) => {
+        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
+            return;
+        }
+        
+        const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
+        const gameCenterX = gameAreaRect.left + gameAreaRect.width / 2;
+        
+        // 计算鼠标位置与游戏中心的水平距离
+        const deltaX = e.clientX - gameCenterX;
+        
+        // 计算目标角度（限制在垂直方向(-90度)左右各60度）
+        let targetAngle = -90 + (deltaX / gameAreaRect.width) * 120;
+        targetAngle = Math.max(-150, Math.min(-30, targetAngle));
+        
+        // 平滑调整角度
+        gameState.cannonAngle += (targetAngle - gameState.cannonAngle) * 0.1;
+        
+        // 更新炮筒位置
+        cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
     });
     
     // 禁用右键菜单
@@ -1837,6 +1919,7 @@ async function restartGame() {
     } else {
         // 失败重开直接生成蚊子
         spawnMosquitoes();
+        startMosquitoMovement(); // 添加这行，确保蚊子开始移动
         // 重新开始电力自动增长
         startPowerCharging();
         // 重新开始背景音乐
@@ -1865,6 +1948,7 @@ function showReadyModal() {
     document.getElementById('startLevelBtn').addEventListener('click', () => {
         readyModal.remove();
         spawnMosquitoes();
+        startMosquitoMovement(); // 添加这行，确保蚊子开始移动
         // 重新开始电力自动增长
         startPowerCharging();
         // 重新开始背景音乐

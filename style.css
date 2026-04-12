@@ -40,6 +40,11 @@ html, body {
         gap: 10px;
     }
     
+    /* 游戏标题 */
+    .title-text {
+        font-size: 14px;
+    }
+    
     /* 雷达大小调整 */
     .radar {
         width: 60px;
@@ -142,6 +147,11 @@ html, body {
         flex-shrink: 0;
     }
     
+    /* 游戏标题 */
+    .title-text {
+        font-size: 12px;
+    }
+    
     .radar {
         width: 48px;
         height: 48px;
@@ -235,6 +245,22 @@ html, body {
     align-items: center;
     padding: 10px;
     gap: 15px;
+}
+
+/* 游戏标题 */
+.game-title {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.title-text {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+    text-align: center;
+    width: 100%;
 }
 
 /* 雷达 */
@@ -346,7 +372,13 @@ html, body {
     flex: 1;
 }
 
-.player-health-section,
+.player-health-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
 .energy-section {
     display: flex;
     align-items: center;
