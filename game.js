@@ -1441,26 +1441,22 @@ function bindEvents() {
     let lastLeftClickTime = 0;
     
     document.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
+        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
             return;
         }
         
         const now = Date.now();
         
-        // 鼠标左键：双击发射普通炮弹
+        // 鼠标左键：单击发射普通炮弹
         if (e.button === 0) {
-            // 双击检测：300ms内两次点击
-            if (now - lastLeftClickTime < 300) {
-                // 防抖动：300ms内只能发射一次
-                if (now - lastFireTime < 300) {
-                    return;
-                }
-                lastFireTime = now;
-                
-                startBGMOnFirstInteraction();
-                fire();
+            // 防抖动：300ms内只能发射一次
+            if (now - lastFireTime < 300) {
+                return;
             }
-            lastLeftClickTime = now;
+            lastFireTime = now;
+            
+            startBGMOnFirstInteraction();
+            fire();
         }
         
         // 鼠标右键：长按激活激光瞄准线，点击发射追踪飞弹
@@ -1619,6 +1615,28 @@ function bindEvents() {
     document.addEventListener('contextmenu', (e) => {
         e.preventDefault();
     });
+    
+    // 说明书功能
+    const manualBtn = document.getElementById('manualBtn');
+    const manualModal = document.getElementById('manualModal');
+    const closeManualBtn = document.getElementById('closeManualBtn');
+    
+    if (manualBtn && manualModal && closeManualBtn) {
+        manualBtn.addEventListener('click', () => {
+            manualModal.classList.add('show');
+        });
+        
+        closeManualBtn.addEventListener('click', () => {
+            manualModal.classList.remove('show');
+        });
+        
+        // 点击弹窗外部关闭
+        manualModal.addEventListener('click', (e) => {
+            if (e.target === manualModal) {
+                manualModal.classList.remove('show');
+            }
+        });
+    }
 }
 
 // 首次交互时启动背景音乐

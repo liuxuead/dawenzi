@@ -28,9 +28,11 @@
                     <span class="score-separator">/</span>
                     <span class="high-score-value" id="highScoreValue">0</span>
                 </div>
-                <div class="debug-info" id="debugInfo" style="font-size: 12px; color: #ffcc00; margin-top: 5px;">
+                <div class="debug-info" id="debugInfo" style="display: none;">
                     手指数: 0 | 落点: -
                 </div>
+                <!-- 说明书按钮 -->
+                <button class="manual-btn" id="manualBtn">📖</button>
             </div>
             <div class="player-status">
                 <div class="player-health-section">
@@ -66,10 +68,6 @@
 
         <!-- 游戏区域：蚊子 -->
         <div class="game-area" id="gameArea">
-            <!-- 蚊子用黑球代替，30px直径 -->
-            <div class="mosquito" style="top: 15%; left: 60%;"></div>
-            <div class="mosquito" style="top: 25%; left: 75%;"></div>
-            <div class="mosquito" style="top: 35%; left: 55%;"></div>
             <!-- 轨迹SVG -->
             <svg id="trailSvg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;">
             </svg>
@@ -120,6 +118,42 @@
     <audio id="zapperSound" src="zapper.mp3"></audio>
     <audio id="meizidanSound" src="meizidan.mp3"></audio>
     <audio id="bgmSound" src="weng.mp3" loop></audio>
+
+    <!-- 说明书弹窗 -->
+    <div class="manual-modal" id="manualModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>游戏说明书</h2>
+                <button class="close-btn" id="closeManualBtn">×</button>
+            </div>
+            <div class="modal-body">
+                <h3>《健康游戏忠告》</h3>
+                <ul>
+                    <li>抵制不良游戏，拒绝盗版游戏。</li>
+                    <li>注意自我保护，谨防受骗上当。</li>
+                    <li>适度游戏益脑，沉迷游戏伤身。</li>
+                    <li>合理安排时间，享受健康生活。</li>
+                </ul>
+                <h3>一. 手势介绍</h3>
+                <ol>
+                    <li>炮筒转动-推动 ：手指在炮筒附近区域推动，可转动炮筒瞄准---PC端鼠标拖动</li>
+                    <li>炮弹发射-双击/单击 ：手指在炮筒附近区域双击，发射炮弹----pc端单击</li>
+                    <li>激光攻击-长按 ：手指在屏幕上长按1秒----鼠标右键长按1秒</li>
+                    <li>飞弹发射-点击 ：点击蚊子或蚊子附近，飞弹及会瞄准，当心中途阻碍----鼠标右键单击</li>
+                </ol>
+                <h3>二. 蚊子介绍</h3>
+                <ol>
+                    <li>极速蚊子 ：此蚊子飞行速度快于其他蚊子，建议用飞弹</li>
+                    <li>分身蚊子（最大） ：此蚊子可随机给任何一个蚊子做分身，需注意及时消灭</li>
+                    <li>加血蚊子 ：此蚊子会给厚血蚊子加血</li>
+                    <li>厚血蚊子（带血条） ：此蚊子一次攻击无法消灭，需注意</li>
+                    <li>隐身蚊子 ：此蚊子带有隐身功能</li>
+                </ol>
+                <h3>三. 关卡介绍</h3>
+                <p>每关蚊子数量和配比随着等级提升难度增加，需要合理使用三种武器</p>
+            </div>
+        </div>
+    </div>
 
     <script src="game.js"></script>
 </body>
