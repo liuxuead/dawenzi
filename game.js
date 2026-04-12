@@ -1086,20 +1086,31 @@ function bindEvents() {
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
             return;
         }
-        const touch = e.touches[0];
-        const deltaX = touch.clientX - touchStartX;
-        const deltaY = touch.clientY - touchStartY;
         
-        // 只有当移动距离超过一定阈值时才阻止默认行为
-        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-            e.preventDefault();
+        // 检查是否在炮筒区域内
+        const cannonSection = document.querySelector('.cannon-section');
+        if (!cannonSection) return;
+        
+        const touch = e.touches[0];
+        const cannonRect = cannonSection.getBoundingClientRect();
+        
+        // 只有当手指在炮筒区域内时才移动炮筒
+        if (touch.clientX >= cannonRect.left && touch.clientX <= cannonRect.right && 
+            touch.clientY >= cannonRect.top && touch.clientY <= cannonRect.bottom) {
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
             
-            // 计算角度变化（提高灵敏度）
-            const angleChange = deltaX * 0.8;
-            rotateCannon(angleChange);
-            
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
+            // 只有当移动距离超过一定阈值时才阻止默认行为
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                e.preventDefault();
+                
+                // 计算角度变化（提高灵敏度）
+                const angleChange = deltaX * 0.8;
+                rotateCannon(angleChange);
+                
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+            }
         }
     }, { passive: false });
     
