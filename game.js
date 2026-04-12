@@ -200,6 +200,9 @@ function updateLaser() {
     let closestDistance = Infinity;
     let closestMosquito = null;
     
+    // 存储需要删除的蚊子ID
+    const mosquitoesToRemove = [];
+    
     gameState.mosquitoes.forEach(mosquito => {
         if (mosquito.element && mosquito.element.style.opacity !== '0') {
             const mosquitoRect = mosquito.element.getBoundingClientRect();
@@ -216,6 +219,21 @@ function updateLaser() {
                     Math.pow(mosquitoX - cannonX, 2) + Math.pow(mosquitoY - cannonY, 2)
                 );
                 
+                // 消灭激光路径上的所有蚊子
+                mosquitoHealth[mosquito.id] -= 100; // 足够的伤害来消灭蚊子
+                
+                if (mosquitoHealth[mosquito.id] <= 0) {
+                    // 增加分数
+                    gameState.score += 10;
+                    updateScore();
+                    
+                    // 播放蚊子消失动画
+                    mosquito.element.style.animation = 'disappear 0.5s forwards';
+                    
+                    // 标记需要删除的蚊子
+                    mosquitoesToRemove.push(mosquito.id);
+                }
+                
                 if (mosquitoDistance < closestDistance) {
                     closestDistance = mosquitoDistance;
                     closestMosquito = mosquito;
@@ -223,6 +241,26 @@ function updateLaser() {
                     endY = mosquitoY;
                 }
             }
+        }
+    });
+    
+    // 删除被激光消灭的蚊子
+    mosquitoesToRemove.forEach(id => {
+        const mosquito = gameState.mosquitoes.find(m => m.id === id);
+        if (mosquito && mosquito.element) {
+            setTimeout(() => {
+                mosquito.element.remove();
+                
+                // 从游戏状态中移除蚊子
+                gameState.mosquitoes = gameState.mosquitoes.filter(m => m.id !== id);
+                delete mosquitoHealth[id];
+                
+                // 检查是否所有蚊子都被消灭
+                if (gameState.mosquitoes.length === 0) {
+                    gameState.level++;
+                    showReadyModal();
+                }
+            }, 500);
         }
     });
     
