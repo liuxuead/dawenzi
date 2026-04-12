@@ -165,12 +165,9 @@ function activateLaser() {
     const endX = cannonX + Math.cos(angleRad) * 10000;
     const endY = cannonY + Math.sin(angleRad) * 10000;
     
-    console.log('激光消灭检测 - 炮筒位置:', cannonX, cannonY, '角度:', gameState.cannonAngle);
-    console.log('蚊子数量:', gameState.mosquitoes.length);
-    
     const mosquitoesToRemove = [];
     
-    gameState.mosquitoes.forEach((mosquito, index) => {
+    gameState.mosquitoes.forEach(mosquito => {
         if (mosquito.element && mosquito.element.style.opacity !== '0') {
             const mosquitoRect = mosquito.element.getBoundingClientRect();
             const mosquitoX = (mosquitoRect.left + mosquitoRect.right) / 2 - gameAreaRect.left;
@@ -178,25 +175,15 @@ function activateLaser() {
             
             const distance = pointToLineDistance(mosquitoX, mosquitoY, cannonX, cannonY, endX, endY);
             
-            console.log(`蚊子${index}: 位置(${mosquitoX},${mosquitoY}), 距离:${distance}, 当前血量:${mosquito.properties.currentHealth}`);
-            
             if (distance < 20) {
-                console.log(`蚊子${index}被激光击中，减100血`);
-                mosquito.properties.currentHealth -= 100;
+                gameState.score += 10;
+                updateScore();
                 
-                if (mosquito.properties.currentHealth <= 0) {
-                    console.log(`蚊子${index}被消灭`);
-                    gameState.score += 10;
-                    updateScore();
-                    
-                    mosquito.element.style.animation = 'disappear 0.5s forwards';
-                    mosquitoesToRemove.push(mosquito.id);
-                }
+                mosquito.element.style.animation = 'disappear 0.5s forwards';
+                mosquitoesToRemove.push(mosquito.id);
             }
         }
     });
-    
-    console.log('需要删除的蚊子数量:', mosquitoesToRemove.length);
     
     mosquitoesToRemove.forEach(id => {
         const mosquito = gameState.mosquitoes.find(m => m.id === id);
@@ -251,39 +238,9 @@ function updateLaser() {
     // 计算激光方向（根据炮筒角度）
     const angleRad = gameState.cannonAngle * Math.PI / 180;
     
-    // 计算激光终点（默认延伸到游戏区域边界）
-    let endX = cannonX + Math.cos(angleRad) * 10000;
-    let endY = cannonY + Math.sin(angleRad) * 10000;
-    
-    // 检测是否与蚊子碰撞
-    let closestDistance = Infinity;
-    let closestMosquito = null;
-    
-    gameState.mosquitoes.forEach(mosquito => {
-        if (mosquito.element && mosquito.element.style.opacity !== '0') {
-            const mosquitoRect = mosquito.element.getBoundingClientRect();
-            const mosquitoX = (mosquitoRect.left + mosquitoRect.right) / 2 - gameAreaRect.left;
-            const mosquitoY = (mosquitoRect.top + mosquitoRect.bottom) / 2 - gameAreaRect.top;
-            
-            // 计算蚊子到激光线的距离
-            const distance = pointToLineDistance(mosquitoX, mosquitoY, cannonX, cannonY, endX, endY);
-            
-            // 如果蚊子在激光线上且距离较近
-            if (distance < 20) {
-                // 计算蚊子到炮筒的距离
-                const mosquitoDistance = Math.sqrt(
-                    Math.pow(mosquitoX - cannonX, 2) + Math.pow(mosquitoY - cannonY, 2)
-                );
-                
-                if (mosquitoDistance < closestDistance) {
-                    closestDistance = mosquitoDistance;
-                    closestMosquito = mosquito;
-                    endX = mosquitoX;
-                    endY = mosquitoY;
-                }
-            }
-        }
-    });
+    // 计算激光终点（直接延伸到很远的地方，不被蚊子截断）
+    const endX = cannonX + Math.cos(angleRad) * 10000;
+    const endY = cannonY + Math.sin(angleRad) * 10000;
     
     // 计算激光线的长度和角度
     const length = Math.sqrt(Math.pow(endX - cannonX, 2) + Math.pow(endY - cannonY, 2));
@@ -303,10 +260,20 @@ function updateLaser() {
         }
     });
     
-    // 给被激光瞄准的蚊子发绿光
-    if (closestMosquito && closestMosquito.element) {
-        closestMosquito.element.style.filter = 'brightness(1.5) drop-shadow(0 0 10px #4CAF50)';
-    }
+    // 给所有在激光线上的蚊子发绿光
+    gameState.mosquitoes.forEach(mosquito => {
+        if (mosquito.element && mosquito.element.style.opacity !== '0') {
+            const mosquitoRect = mosquito.element.getBoundingClientRect();
+            const mosquitoX = (mosquitoRect.left + mosquitoRect.right) / 2 - gameAreaRect.left;
+            const mosquitoY = (mosquitoRect.top + mosquitoRect.bottom) / 2 - gameAreaRect.top;
+            
+            const distance = pointToLineDistance(mosquitoX, mosquitoY, cannonX, cannonY, endX, endY);
+            
+            if (distance < 20) {
+                mosquito.element.style.filter = 'brightness(1.5) drop-shadow(0 0 10px #4CAF50)';
+            }
+        }
+    });
     
     // 继续更新激光
     if (laserActive) {
@@ -548,7 +515,9 @@ function createMosquito(mosquitoId) {
             speed: 1,
             clone: false,
             health: false,
-            heal: false
+            heal: false,
+            maxHealth: 100,
+            currentHealth: 100
         }
     };
     
