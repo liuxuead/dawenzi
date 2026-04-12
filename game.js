@@ -1041,9 +1041,25 @@ function bindEvents() {
         if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
             return;
         }
-        const touch = e.touches[0];
-        touchStartX = touch.clientX;
-        touchStartY = touch.clientY;
+        
+        // 检查是否在炮筒区域内
+        const cannonSection = document.querySelector('.cannon-section');
+        if (cannonSection) {
+            const touch = e.touches[0];
+            const cannonRect = cannonSection.getBoundingClientRect();
+            
+            // 检查是否在炮筒区域内（左右各扩展15像素）
+            if (touch.clientX >= cannonRect.left - 15 && touch.clientX <= cannonRect.right + 15 && 
+                touch.clientY >= cannonRect.top && touch.clientY <= cannonRect.bottom) {
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+            }
+        } else {
+            // 如果找不到炮筒区域，仍然更新触摸起点（防止错误）
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+        }
         
         // 记录所有手指
         for (let i = 0; i < e.touches.length; i++) {
@@ -1094,8 +1110,8 @@ function bindEvents() {
         const touch = e.touches[0];
         const cannonRect = cannonSection.getBoundingClientRect();
         
-        // 只有当手指在炮筒区域内时才移动炮筒
-        if (touch.clientX >= cannonRect.left && touch.clientX <= cannonRect.right && 
+        // 只有当手指在炮筒区域内时才移动炮筒（左右各扩展15像素）
+        if (touch.clientX >= cannonRect.left - 15 && touch.clientX <= cannonRect.right + 15 && 
             touch.clientY >= cannonRect.top && touch.clientY <= cannonRect.bottom) {
             const deltaX = touch.clientX - touchStartX;
             const deltaY = touch.clientY - touchStartY;
