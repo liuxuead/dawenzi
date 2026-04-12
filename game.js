@@ -1048,9 +1048,9 @@ function bindEvents() {
             const touch = e.touches[0];
             const cannonRect = cannonSection.getBoundingClientRect();
             
-        // 检查是否在炮筒区域内（左右各扩展100像素，上下各扩展30像素）
-            if (touch.clientX >= cannonRect.left - 100 && touch.clientX <= cannonRect.right + 100 && 
-                touch.clientY >= cannonRect.top - 30 && touch.clientY <= cannonRect.bottom + 30) {
+            // 检查是否在炮筒区域内（左右各扩展30像素，上下各扩展100像素）
+            if (touch.clientX >= cannonRect.left - 30 && touch.clientX <= cannonRect.right + 30 && 
+                touch.clientY >= cannonRect.top - 100 && touch.clientY <= cannonRect.bottom + 100) {
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
             }
@@ -1110,9 +1110,9 @@ function bindEvents() {
         const touch = e.touches[0];
         const cannonRect = cannonSection.getBoundingClientRect();
         
-        // 扩大检测区域，包括炮筒延伸方向（左右各扩展100像素，上下各扩展30像素）
-        if (touch.clientX >= cannonRect.left - 100 && touch.clientX <= cannonRect.right + 100 && 
-            touch.clientY >= cannonRect.top - 30 && touch.clientY <= cannonRect.bottom + 30) {
+        // 扩大检测区域，包括炮筒延伸方向（左右各扩展30像素，上下各扩展100像素）
+        if (touch.clientX >= cannonRect.left - 30 && touch.clientX <= cannonRect.right + 30 && 
+            touch.clientY >= cannonRect.top - 100 && touch.clientY <= cannonRect.bottom + 100) {
             // 如果是第一次进入炮筒区域，更新触摸起点
             if (!touchStartX || !touchStartY) {
                 touchStartX = touch.clientX;
