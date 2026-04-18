@@ -2053,28 +2053,24 @@ async function restartGame() {
         trailSvg.removeChild(trailSvg.firstChild);
     }
     
-    // 如果是过关（非失败），显示准备界面等待点击
-    if (gameState.gameOverReason !== 'lose') {
-        showReadyModal();
-    } else {
-        // 失败重开直接生成蚊子
-        spawnMosquitoes();
-        startMosquitoMovement(); // 添加这行，确保蚊子开始移动
-        // 重新开始电力自动增长
-        startPowerCharging();
-        // 重新开始背景音乐
-        bgmStarted = true;
-        resumeBGM();
-        
-        // 调用SDK的游戏开始事件
-        try {
-            if (window.CrazyGames && window.CrazyGames.SDK) {
-                console.log('Calling SDK.gameplayStart()');
-                window.CrazyGames.SDK.game.gameplayStart();
-            }
-        } catch (error) {
-            console.warn('Error calling SDK.gameplayStart():', error);
+    // 无论是过关还是失败，都直接开始游戏，不再显示准备界面
+    // 直接生成蚊子
+    spawnMosquitoes();
+    startMosquitoMovement(); // 添加这行，确保蚊子开始移动
+    // 重新开始电力自动增长
+    startPowerCharging();
+    // 重新开始背景音乐
+    bgmStarted = true;
+    resumeBGM();
+    
+    // 调用SDK的游戏开始事件
+    try {
+        if (window.CrazyGames && window.CrazyGames.SDK) {
+            console.log('Calling SDK.gameplayStart()');
+            window.CrazyGames.SDK.game.gameplayStart();
         }
+    } catch (error) {
+        console.warn('Error calling SDK.gameplayStart():', error);
     }
 }
 
