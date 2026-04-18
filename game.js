@@ -216,7 +216,7 @@ function activatePCLaser() {
         laserLine.style.position = 'fixed'; // 使用fixed定位，与红黑线一致
         laserLine.style.height = '2px';
         laserLine.style.backgroundColor = '#4CAF50';
-        laserLine.style.zIndex = '9'; // 激光显示在炮筒后面，这样炮筒内的部分会被遮挡
+        laserLine.style.zIndex = '12'; // 激光显示在炮筒上面，确保能够看到
         laserLine.style.pointerEvents = 'none';
         laserLine.style.boxShadow = '0 0 10px #4CAF50, 0 0 20px #4CAF50';
         document.body.appendChild(laserLine);
@@ -285,31 +285,49 @@ function updateLaser() {
     
     const gameAreaRect = gameArea.getBoundingClientRect();
     
-    // 计算激光方向（根据炮筒角度）
-    const angleRad = gameState.cannonAngle * Math.PI / 180;
-    
-    // 计算激光起点（屏幕绝对坐标）
-    let laserStartX, laserStartY;
+    // 计算激光方向（使用与炮筒一致的角度计算方式）
+    let laserStartX, laserStartY, lineAngle;
     
     if (window.matchMedia('(pointer: coarse)').matches) {
-        // 移动端：cannonX和cannonY是相对于gameArea的坐标
-        laserStartX = cannonX + gameAreaRect.left;
-        laserStartY = cannonY + gameAreaRect.top;
+        // 移动端：使用cannonBarrel
+        if (!cannonBarrel) return;
+        const cannonRect = cannonBarrel.getBoundingClientRect();
+        const gameAreaRect = gameArea.getBoundingClientRect();
+        laserStartX = (cannonRect.left + cannonRect.right) / 2 - gameAreaRect.left;
+        laserStartY = (cannonRect.top + cannonRect.bottom) / 2 - gameAreaRect.top;
+        
+        // 计算激光方向（根据炮筒角度）
+        const angleRad = gameState.cannonAngle * Math.PI / 180;
+        lineAngle = gameState.cannonAngle + 90; // 转换为与CSS旋转一致的角度
     } else {
-        // PC端：cannonX和cannonY已经是绝对坐标
-        laserStartX = cannonX;
-        laserStartY = cannonY;
+        // PC端：使用与炮筒一致的起点和角度计算方式
+        const cannonSection = document.querySelector('.cannon-section');
+        if (!cannonSection) return;
+        const cannonRect = cannonSection.getBoundingClientRect();
+        const cannonBaseX = cannonRect.left + cannonRect.width / 2;
+        const cannonBaseY = cannonRect.bottom;
+        
+        // 计算鼠标相对于炮底的角度（与炮筒角度一致）
+        const deltaX = mouseX - cannonBaseX;
+        const deltaY = mouseY - cannonBaseY;
+        lineAngle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+        
+        // 计算炮筒长度和末端位置
+        const cannonLength = 150;
+        const cannonAngleRad = lineAngle * Math.PI / 180;
+        
+        // 计算激光起点（从炮筒末端开始）
+        laserStartX = cannonBaseX + Math.cos(cannonAngleRad) * cannonLength;
+        laserStartY = cannonBaseY + Math.sin(cannonAngleRad) * cannonLength;
     }
     
     // 计算激光终点（直接延伸到很远的地方，不被蚊子截断）
+    const angleRad = lineAngle * Math.PI / 180;
     const endX = laserStartX + Math.cos(angleRad) * 10000;
     const endY = laserStartY + Math.sin(angleRad) * 10000;
     
     // 计算激光线的长度
     const length = Math.sqrt(Math.pow(endX - laserStartX, 2) + Math.pow(endY - laserStartY, 2));
-    
-    // 使用炮筒的角度，不需要重新计算
-    const lineAngle = gameState.cannonAngle + 90; // 转换为与CSS旋转一致的角度
     
     // 设置激光线样式（使用屏幕绝对坐标）
     laserLine.style.left = laserStartX + 'px';
@@ -359,10 +377,7 @@ function updateLaser() {
         }
     });
     
-    // 继续更新激光
-    if (laserActive) {
-        requestAnimationFrame(updateLaser);
-    }
+
 }
 
 // 计算点到线段的距离
@@ -1137,8 +1152,8 @@ let laserLine = null;
 let laserActive = false;
 let laserStartTime = 0;
 const LASER_DURATION = 200; // 激光持续时间0.2秒（移动端）
-const PC_LASER_DURATION = 3000; // 激光持续时间3秒（PC端）
-const LASER_COST = 10; // 每次使用激光消耗10点能量
+const PC_LASER_DURATION = 500; // 激光持续时间0.5秒（PC端）
+const LASER_COST = 100; // 每次使用激光消耗100点能量（100%）
 
 // 鼠标位置相关变量
 let mouseX = 0;
@@ -1525,9 +1540,11 @@ function bindEvents() {
         }
         
         // 处理左键点击（如果没有长按超过0.5秒，则发射普通炮弹）
-        if (e.button === 0 && longPressTimer) {
-            clearTimeout(longPressTimer);
-            longPressTimer = null;
+        if (e.button === 0) {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
             
             const now = Date.now();
             if (now - mouseDownTime < 500) {
@@ -1968,15 +1985,37 @@ function createBullet() {
     const gameAreaRect = gameArea.getBoundingClientRect();
     
     // 获取炮筒旋转角度
-    const angleRad = gameState.cannonAngle * Math.PI / 180;
+    let angleRad, startX, startY;
     
-    // 获取炮口元素的位置（最准确的方式）
-    const muzzleElement = document.querySelector('.cannon-muzzle');
-    const muzzleRect = muzzleElement.getBoundingClientRect();
-    
-    // 计算炮口中心点相对于游戏区域的位置
-    const startX = muzzleRect.left + muzzleRect.width / 2 - gameAreaRect.left;
-    const startY = muzzleRect.top + muzzleRect.height / 2 - gameAreaRect.top;
+    if (window.matchMedia('(pointer: coarse)').matches) {
+        // 移动端：使用真实的炮口元素
+        angleRad = gameState.cannonAngle * Math.PI / 180;
+        const muzzleElement = document.querySelector('.cannon-muzzle');
+        const muzzleRect = muzzleElement.getBoundingClientRect();
+        startX = muzzleRect.left + muzzleRect.width / 2 - gameAreaRect.left;
+        startY = muzzleRect.top + muzzleRect.height / 2 - gameAreaRect.top;
+    } else {
+        // PC端：使用模拟的炮筒线条末端作为炮口
+        const cannonSection = document.querySelector('.cannon-section');
+        const cannonRect = cannonSection.getBoundingClientRect();
+        const cannonBaseX = cannonRect.left + cannonRect.width / 2;
+        const cannonBaseY = cannonRect.bottom;
+        
+        // 计算鼠标相对于炮底的角度
+        const deltaX = mouseX - cannonBaseX;
+        const deltaY = mouseY - cannonBaseY;
+        const lineAngle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+        angleRad = lineAngle * Math.PI / 180;
+        
+        // 计算炮筒长度和末端位置
+        const cannonLength = 150;
+        const cannonEndX = cannonBaseX + Math.cos(angleRad) * cannonLength;
+        const cannonEndY = cannonBaseY + Math.sin(angleRad) * cannonLength;
+        
+        // 计算炮口中心点相对于游戏区域的位置
+        startX = cannonEndX - gameAreaRect.left;
+        startY = cannonEndY - gameAreaRect.top;
+    }
     
     // 设置炮弹初始位置（居中）
     bullet.style.left = (startX - 7.5) + 'px';
