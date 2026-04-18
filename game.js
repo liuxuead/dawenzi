@@ -1180,13 +1180,6 @@ function bindEvents() {
         // 检查事件对象是否有效
         if (!e || !e.touches || e.touches.length === 0) return;
         
-        // 排除按钮区域
-        if (e.target && typeof e.target.closest === 'function') {
-            if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
-                return;
-            }
-        }
-        
         // 检查是否在炮筒区域内
         const cannonSection = document.querySelector('.cannon-section');
         if (!cannonSection) return;
