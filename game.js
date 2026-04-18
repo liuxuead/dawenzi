@@ -1110,9 +1110,14 @@ function bindEvents() {
     
     // 触摸滑动控制炮筒方向（全屏有效）
     document.addEventListener('touchstart', (e) => {
+        // 检查事件对象是否有效
+        if (!e || !e.touches || e.touches.length === 0) return;
+        
         // 排除按钮区域
-        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
-            return;
+        if (e.target && typeof e.target.closest === 'function') {
+            if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
+                return;
+            }
         }
         
         // 检查是否在炮筒区域内
@@ -1270,9 +1275,14 @@ function bindEvents() {
     
     // 双击屏幕发射（全屏有效，排除按钮）
     document.addEventListener('touchend', (e) => {
+        // 检查事件对象是否有效
+        if (!e || !e.changedTouches || e.changedTouches.length === 0) return;
+        
         // 排除按钮区域和炮筒区域（炮筒区域有单独的双击事件）
-        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
-            return;
+        if (e.target && typeof e.target.closest === 'function') {
+            if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
+                return;
+            }
         }
         
         // 清除长按计时器
@@ -1292,7 +1302,7 @@ function bindEvents() {
         
         // 检查是否有多指触控（还有其他手指在屏幕上）
         let distance = 0;
-        if (e.touches.length > 0 && firstTouchPos) {
+        if (e.touches && e.touches.length > 0 && firstTouchPos) {
             // 计算两指距离
             const dx = leavingPos.x - firstTouchPos.x;
             const dy = leavingPos.y - firstTouchPos.y;
@@ -1305,7 +1315,7 @@ function bindEvents() {
         }
         
         // 如果没有手指在屏幕上，重置第一次落点
-        if (e.touches.length === 0) {
+        if (e.touches && e.touches.length === 0) {
             firstTouchPos = null;
         }
         
@@ -1316,7 +1326,10 @@ function bindEvents() {
         }
         
         // 检查离开的手指位置是否在蚊子活动区域内
-        const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
+        const gameArea = document.querySelector('.game-area');
+        if (!gameArea) return;
+        
+        const gameAreaRect = gameArea.getBoundingClientRect();
         const gameAreaWidth = gameAreaRect.width;
         const gameAreaHeight = gameAreaRect.height;
         
