@@ -1411,17 +1411,17 @@ function bindEvents() {
             return;
         }
         
-        // 排除按钮区域和炮筒区域（炮筒区域有单独的双击事件）
+        // 排除炮筒区域（炮筒区域有单独的双击事件）
         const target = e.target;
-        if (target.closest('.cannon-section') || target.closest('.btn-red') || target.closest('.btn-green')) {
+        if (target.closest('.cannon-section')) {
             return;
         }
         
         const now = Date.now();
         const tapInterval = now - lastTapTime;
         
-        if (tapInterval < 300) {
-            // 双击检测
+        if (tapInterval < 500) {
+            // 双击检测（延长间隔到500ms，更容易触发）
             tapCount++;
             if (tapCount === 2) {
                 // 防抖动：300ms内只能发射一次
