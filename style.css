@@ -653,6 +653,11 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
 }
 
 /* 1号蚊子只显示图片，不显示黑球背景 */
@@ -667,6 +672,10 @@ html, body {
     font-weight: bold;
     text-align: center;
     line-height: 1;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 /* 蚊子图片 */
@@ -675,6 +684,13 @@ html, body {
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-drag: none;
 }
 
 /* 血条 */
