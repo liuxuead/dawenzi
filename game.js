@@ -133,6 +133,13 @@ function activateLaser() {
         return;
     }
     
+    // 消耗能量
+    if (gameState.energy < LASER_COST) {
+        return;
+    }
+    gameState.energy = Math.max(0, gameState.energy - LASER_COST);
+    updateEnergyBar();
+    
     laserActive = true;
     laserStartTime = Date.now();
     
@@ -141,13 +148,13 @@ function activateLaser() {
         // If laser line element doesn't exist or not in DOM, recreate it
         laserLine = document.createElement('div');
         laserLine.className = 'laser-line';
-        laserLine.style.position = 'absolute';
+        laserLine.style.position = 'fixed'; // 使用fixed定位，与红黑线一致
         laserLine.style.height = '2px';
         laserLine.style.backgroundColor = '#4CAF50';
-        laserLine.style.zIndex = '999';
+        laserLine.style.zIndex = '12'; // 激光显示在红黑线上面
         laserLine.style.pointerEvents = 'none';
         laserLine.style.boxShadow = '0 0 10px #4CAF50, 0 0 20px #4CAF50';
-        gameArea.appendChild(laserLine);
+        document.body.appendChild(laserLine);
     } else {
         laserLine.style.display = 'block';
     }
@@ -158,7 +165,7 @@ function activateLaser() {
     // Close laser after 0.5 seconds
     setTimeout(() => {
         deactivateLaser();
-    }, 500);
+    }, LASER_DURATION);
 }
 
 // Deactivate laser sight
@@ -178,53 +185,71 @@ function deactivateLaser() {
 
 // 更新激光瞄准线
 function updateLaser() {
-    if (!laserActive || !laserLine || !cannonBarrel) {
+    if (!laserActive || !laserLine) {
         return;
     }
     
-    // 获取炮筒位置
-    const cannonRect = cannonBarrel.getBoundingClientRect();
-    const gameAreaRect = gameArea.getBoundingClientRect();
+    // 获取炮筒位置信息（与红黑线使用相同的计算方式）
+    const cannonSection = document.querySelector('.cannon-section');
+    if (!cannonSection) {
+        return;
+    }
     
-    // 计算炮筒中心点
-    const cannonX = (cannonRect.left + cannonRect.right) / 2 - gameAreaRect.left;
-    const cannonY = (cannonRect.top + cannonRect.bottom) / 2 - gameAreaRect.top;
+    const cannonRect = cannonSection.getBoundingClientRect();
+    const cannonBaseX = cannonRect.left + cannonRect.width / 2;
+    const cannonBaseY = cannonRect.bottom;
     
-    // 计算激光方向（根据炮筒角度）
-    const angleRad = gameState.cannonAngle * Math.PI / 180;
+    // 炮筒长度（与模拟炮筒相同）
+    const cannonLength = 150;
     
-    // 计算激光终点（直接延伸到很远的地方，不被蚊子截断）
-    const endX = cannonX + Math.cos(angleRad) * 10000;
-    const endY = cannonY + Math.sin(angleRad) * 10000;
+    // 使用当前红线的角度
+    const angleRad = currentLineAngle * Math.PI / 180;
+    
+    // 计算炮筒末端位置（红黑交接处）
+    const cannonEndX = cannonBaseX + Math.cos(angleRad) * cannonLength;
+    const cannonEndY = cannonBaseY + Math.sin(angleRad) * cannonLength;
+    
+    // 计算激光终点（延伸到屏幕外）
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    
+    // 计算激光延伸到屏幕外的终点
+    let endX, endY;
+    
+    // 根据角度计算延伸方向
+    if (Math.abs(Math.cos(angleRad)) > Math.abs(Math.sin(angleRad))) {
+        // 水平方向延伸
+        endX = Math.cos(angleRad) > 0 ? screenWidth + 100 : -100;
+        endY = cannonEndY + (endX - cannonEndX) * Math.tan(angleRad);
+    } else {
+        // 垂直方向延伸
+        endY = Math.sin(angleRad) > 0 ? screenHeight + 100 : -100;
+        endX = cannonEndX + (endY - cannonEndY) / Math.tan(angleRad);
+    }
     
     // 计算激光线的长度和角度
-    const length = Math.sqrt(Math.pow(endX - cannonX, 2) + Math.pow(endY - cannonY, 2));
-    const lineAngle = Math.atan2(endY - cannonY, endX - cannonX) * 180 / Math.PI;
+    const length = Math.sqrt(Math.pow(endX - cannonEndX, 2) + Math.pow(endY - cannonEndY, 2));
+    const lineAngle = currentLineAngle;
     
     // 设置激光线样式
-    laserLine.style.left = cannonX + 'px';
-    laserLine.style.top = cannonY + 'px';
+    laserLine.style.left = cannonEndX + 'px';
+    laserLine.style.top = cannonEndY - 1 + 'px'; // 垂直居中
     laserLine.style.width = length + 'px';
-    laserLine.style.transformOrigin = '0 0';
+    laserLine.style.transformOrigin = '0 50%';
     laserLine.style.transform = `rotate(${lineAngle}deg)`;
-    
-    // 恢复所有蚊子的颜色（跳过正在消失的蚊子）
-    gameState.mosquitoes.forEach(mosquito => {
-        if (mosquito.element && !mosquito.element.style.animation) {
-            mosquito.element.style.filter = '';
-        }
-    });
+    laserLine.style.display = 'block';
     
     // 检测并消灭激光线上的蚊子
+    const gameAreaRect = gameArea.getBoundingClientRect();
     const mosquitoesToRemove = [];
     
     gameState.mosquitoes.forEach(mosquito => {
         if (mosquito.element && mosquito.element.style.opacity !== '0' && !mosquito.element.style.animation) {
             const mosquitoRect = mosquito.element.getBoundingClientRect();
-            const mosquitoX = (mosquitoRect.left + mosquitoRect.right) / 2 - gameAreaRect.left;
-            const mosquitoY = (mosquitoRect.top + mosquitoRect.bottom) / 2 - gameAreaRect.top;
+            const mosquitoX = (mosquitoRect.left + mosquitoRect.right) / 2;
+            const mosquitoY = (mosquitoRect.top + mosquitoRect.bottom) / 2;
             
-            const distance = pointToLineDistance(mosquitoX, mosquitoY, cannonX, cannonY, endX, endY);
+            const distance = pointToLineDistance(mosquitoX, mosquitoY, cannonEndX, cannonEndY, endX, endY);
             
             if (distance < 20) {
                 // 给蚊子发绿光
@@ -248,21 +273,10 @@ function updateLaser() {
         }
     });
     
-    // 处理要移除的蚊子
-    mosquitoesToRemove.forEach(id => {
-        const mosquito = gameState.mosquitoes.find(m => m.id === id);
-        if (mosquito && mosquito.element) {
-            setTimeout(() => {
-                mosquito.element.remove();
-                gameState.mosquitoes = gameState.mosquitoes.filter(m => m.id !== id);
-                
-                if (gameState.mosquitoes.length === 0) {
-                    gameState.level++;
-                    showReadyModal();
-                }
-            }, 500);
-        }
-    });
+    // 移除被激光消灭的蚊子
+    if (mosquitoesToRemove.length > 0) {
+        gameState.mosquitoes = gameState.mosquitoes.filter(m => !mosquitoesToRemove.includes(m.id));
+    }
     
     // 继续更新激光
     if (laserActive) {
@@ -328,16 +342,6 @@ function updateRadarSize() {
 async function init() {
     console.log('Game init started');
     
-    // 初始化 CrazyGames SDK
-    try {
-        console.log('Initializing CrazyGames SDK...');
-        await window.CrazyGames.SDK.init();
-        console.log('CrazyGames SDK initialized successfully');
-        console.log('Environment:', window.CrazyGames.SDK.environment);
-    } catch (error) {
-        console.warn('Error initializing CrazyGames SDK:', error);
-    }
-    
     // 显示加载界面
     if (loadingModal) {
         loadingModal.style.display = 'flex';
@@ -371,6 +375,15 @@ async function init() {
     startEnergyCharging();
     bindEvents();
     initBGM();
+    
+    // 初始化时让炮筒指向当前鼠标位置
+    setTimeout(() => {
+        const event = new MouseEvent('mousemove', {
+            clientX: window.innerWidth / 2,
+            clientY: window.innerHeight / 2
+        });
+        document.dispatchEvent(event);
+    }, 100);
     
     // 调用 restartGame 来确保游戏状态与重新开始后的状态一致
     await restartGame();
@@ -661,8 +674,8 @@ function updateRadarDots() {
     
     // 只显示活着的蚊子
     gameState.mosquitoes.forEach(m => {
-        // 跳过已消失或已移除的蚊子
-        if (m.element.style.opacity === '0' || !m.element.parentNode) return;
+        // 只跳过已移除的蚊子，保留对透明度的检查，让雷达只显示可见的蚊子
+        if (!m.element.parentNode) return;
         
         const dot = document.createElement('div');
         dot.className = 'radar-dot';
@@ -1037,14 +1050,15 @@ let touchStartX = 0;
 let touchStartY = 0;
 let firstTouchPos = null; // 记录第一次手指落点位置
 let activeTouches = new Map(); // 存储当前活跃的手指
+let currentLineAngle = 0; // 存储当前红线角度
 
 // 激光瞄准线相关变量
 let longPressTimer = null;
 let laserLine = null;
 let laserActive = false;
 let laserStartTime = 0;
-const LASER_DURATION = 3000; // 激光持续时间3秒
-const LASER_COST = 10; // 每次使用激光消耗10点能量
+const LASER_DURATION = 500; // 激光持续时间0.5秒
+const LASER_COST = 100; // 每次使用激光消耗100%能量
 
 // 绑定事件
 function bindEvents() {
@@ -1139,9 +1153,9 @@ function bindEvents() {
         
         // 长按检测：0.5秒后激活激光瞄准线
         longPressTimer = setTimeout(() => {
-            if (gameState.energy >= gameState.maxEnergy / 3) {
+            if (gameState.energy >= gameState.maxEnergy) {
                 // 消耗能量
-                gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy / 3);
+                gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy);
                 updateEnergyBar();
                 
                 // 激活激光瞄准线
@@ -1312,11 +1326,7 @@ function bindEvents() {
             
             // 检查电力是否足够（需要1/3电力）
             if (gameState.power < gameState.maxPower / 3) {
-                // 播放没子弹音效
-                pauseBGM();
-                meizidanSound.currentTime = 0;
-                meizidanSound.play();
-                meizidanSound.onended = resumeBGM;
+                // 不再播放meizidan音效
                 return;
             }
             
@@ -1412,10 +1422,7 @@ function bindEvents() {
             
             // 检查电力是否足够（需要1/3电力）
             if (gameState.power < gameState.maxPower / 3) {
-                pauseBGM();
-                meizidanSound.currentTime = 0;
-                meizidanSound.play();
-                meizidanSound.onended = resumeBGM;
+                // 不再播放meizidan音效
                 return;
             }
             
@@ -1472,34 +1479,21 @@ function bindEvents() {
     let lastLeftClickTime = 0;
     
     document.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
+        // 排除按钮区域
+        if (e.target && typeof e.target.closest === 'function' && (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn'))) {
             return;
         }
         
         const now = Date.now();
         
-        // 鼠标左键：单击发射普通炮弹
+        // 鼠标左键：单击发射普通炮弹，长按激活激光瞄准线
         if (e.button === 0) {
-            // 防抖动：300ms内只能发射一次
-            if (now - lastFireTime < 300) {
-                return;
-            }
-            lastFireTime = now;
-            
-            startBGMOnFirstInteraction();
-            fire();
-        }
-        
-        // 鼠标右键：长按激活激光瞄准线，点击发射追踪飞弹
-        if (e.button === 2) {
-            e.preventDefault();
-            
             // 长按检测：0.5秒后激活激光瞄准线
             mouseDownTime = now;
             longPressTimer = setTimeout(() => {
-                if (gameState.energy >= gameState.maxEnergy / 3) {
+                if (gameState.energy >= gameState.maxEnergy) {
                     // 消耗能量
-                    gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy / 3);
+                    gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy);
                     updateEnergyBar();
                     
                     // 激活激光瞄准线
@@ -1507,139 +1501,351 @@ function bindEvents() {
                 }
             }, 500);
         }
+        
+        // 鼠标右键：点击发射追踪飞弹
+        if (e.button === 2) {
+            e.preventDefault(); // 阻止默认的右键菜单
+            console.log('右键 mousedown 事件触发，已阻止默认行为');
+            
+            // 确保用户已交互，获取音频播放权限
+            console.log('调用 startBGMOnFirstInteraction()');
+            startBGMOnFirstInteraction();
+            console.log('bgmStarted:', bgmStarted);
+            
+            // 立即记录鼠标按下时间，确保右键点击的响应速度
+            mouseDownTime = now;
+            console.log('记录鼠标按下时间:', mouseDownTime);
+        }
     });
     
     document.addEventListener('mouseup', (e) => {
-        if (longPressTimer) {
+        // 处理左键点击
+        if (e.button === 0 && longPressTimer) {
             clearTimeout(longPressTimer);
             
-            // 如果是右键且没有长按超过0.5秒，则发射追踪飞弹
-            if (e.button === 2) {
-                const now = Date.now();
-                if (now - mouseDownTime < 500) {
-                    // 防抖动：300ms内只能发射一次
-                    if (now - lastFireTime < 300) {
-                        return;
-                    }
-                    
-                    // 检查电力是否足够（需要1/3电力）
-                    if (gameState.power < gameState.maxPower / 3) {
-                        pauseBGM();
-                        meizidanSound.currentTime = 0;
-                        meizidanSound.play();
-                        meizidanSound.onended = resumeBGM;
-                        return;
-                    }
-                    
-                    // 获取鼠标点击位置
-                    const clickPos = {
-                        x: e.clientX,
-                        y: e.clientY
-                    };
-                    
-                    // 检查点击位置是否在蚊子活动区域内
-                    const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
-                    const gameAreaWidth = gameAreaRect.width;
-                    const gameAreaHeight = gameAreaRect.height;
-                    
-                    // 蚊子活动区域边界（与 startMosquitoMovement 函数中保持一致）
-                    const mosquitoAreaLeft = gameAreaRect.left + gameAreaWidth * 0.05;
-                    const mosquitoAreaRight = gameAreaRect.left + gameAreaWidth * 0.9;
-                    const mosquitoAreaTop = gameAreaRect.top + gameAreaHeight * 0.05;
-                    const mosquitoAreaBottom = gameAreaRect.top + gameAreaHeight * 0.7;
-                    
-                    // 检查点击位置是否在蚊子活动区域内
-                    const isInMosquitoArea = clickPos.x >= mosquitoAreaLeft && 
-                                            clickPos.x <= mosquitoAreaRight && 
-                                            clickPos.y >= mosquitoAreaTop && 
-                                            clickPos.y <= mosquitoAreaBottom;
-                    
-                    let closestMosquito;
-                    if (isInMosquitoArea) {
-                        // 点击在蚊子活动区域内，找出离点击位置最近的蚊子
-                        closestMosquito = findClosestMosquitoToPoint(clickPos);
-                    } else {
-                        // 点击在蚊子活动区域外，使用炮筒指向的方向
-                        const cannonBase = document.querySelector('.cannon-base');
-                        const cannonRect = cannonBase.getBoundingClientRect();
-                        const cannonCenter = {
-                            x: cannonRect.left + cannonRect.width / 2,
-                            y: cannonRect.top + cannonRect.height / 2
-                        };
-                        
-                        // 计算炮筒指向的方向
-                        const angleRad = gameState.cannonAngle * Math.PI / 180;
-                        const lineEnd = {
-                            x: cannonCenter.x + Math.cos(angleRad) * 1000,
-                            y: cannonCenter.y + Math.sin(angleRad) * 1000
-                        };
-                        
-                        // 找出离炮筒指向方向最近的蚊子
-                        closestMosquito = findClosestMosquitoToLine(cannonCenter, lineEnd);
-                    }
-                    
-                    if (closestMosquito) {
-                        // 标记蚊子
-                        markMosquito(closestMosquito);
-                        
-                        // 更新最后发射时间
-                        lastFireTime = now;
-                        
-                        // 消耗1/3电力
-                        gameState.power = Math.max(0, gameState.power - gameState.maxPower / 3);
-                        updatePowerBar();
-                        
-                        // 发射追踪飞弹
-                        setTimeout(() => {
-                            createHomingMissile(closestMosquito);
-                        }, 300);
-                    }
+            // 如果没有长按超过0.5秒，则发射普通炮弹
+            const now = Date.now();
+            if (now - mouseDownTime < 500) {
+                // 防抖动：300ms内只能发射一次
+                if (now - lastFireTime < 300) {
+                    return;
                 }
+                lastFireTime = now;
+                
+                startBGMOnFirstInteraction();
+                fire();
             }
             
             longPressTimer = null;
         }
+        
+        // 处理右键点击（独立于longPressTimer）
+        if (e.button === 2) {
+            console.log('右键 mouseup 事件触发');
+            const now = Date.now();
+            console.log('当前时间:', now);
+            console.log('鼠标按下时间:', mouseDownTime);
+            console.log('时间差:', now - mouseDownTime);
+            // 防抖动：300ms内只能发射一次
+            console.log('最后发射时间:', lastFireTime);
+            console.log('与最后发射时间的差:', now - lastFireTime);
+            if (now - lastFireTime < 300) {
+                console.log('防抖动，忽略点击');
+                return;
+            }
+            
+            // 确保用户已交互，获取音频播放权限
+            console.log('再次调用 startBGMOnFirstInteraction()');
+            startBGMOnFirstInteraction();
+            console.log('bgmStarted:', bgmStarted);
+            
+            // 检查电力是否足够（需要1/3电力）
+            console.log('当前电力:', gameState.power);
+            console.log('最大电力:', gameState.maxPower);
+            console.log('需要电力:', gameState.maxPower / 3);
+            if (gameState.power < gameState.maxPower / 3) {
+                console.log('电力不足，返回');
+                // 不再播放meizidan音效
+                return;
+            }
+            
+            // 获取鼠标点击位置
+            const clickPos = {
+                x: e.clientX,
+                y: e.clientY
+            };
+            
+            // 检查点击位置是否在蚊子活动区域内
+            const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
+            const gameAreaWidth = gameAreaRect.width;
+            const gameAreaHeight = gameAreaRect.height;
+            
+            // 蚊子活动区域边界（与 startMosquitoMovement 函数中保持一致）
+            const mosquitoAreaLeft = gameAreaRect.left + gameAreaWidth * 0.05;
+            const mosquitoAreaRight = gameAreaRect.left + gameAreaWidth * 0.9;
+            const mosquitoAreaTop = gameAreaRect.top + gameAreaHeight * 0.05;
+            const mosquitoAreaBottom = gameAreaRect.top + gameAreaHeight * 0.7;
+            
+            // 检查点击位置是否在蚊子活动区域内
+            const isInMosquitoArea = clickPos.x >= mosquitoAreaLeft && 
+                                    clickPos.x <= mosquitoAreaRight && 
+                                    clickPos.y >= mosquitoAreaTop && 
+                                    clickPos.y <= mosquitoAreaBottom;
+            
+            console.log('右键点击坐标:', clickPos.x, clickPos.y);
+            console.log('蚊子活动区域:', {
+                left: mosquitoAreaLeft,
+                right: mosquitoAreaRight,
+                top: mosquitoAreaTop,
+                bottom: mosquitoAreaBottom
+            });
+            console.log('是否在活动区域内:', isInMosquitoArea);
+            
+            let closestMosquito;
+            if (isInMosquitoArea) {
+                // 点击在蚊子活动区域内，找出离点击位置最近的蚊子
+                closestMosquito = findClosestMosquitoToPoint(clickPos);
+            } else {
+                // 点击在蚊子活动区域外，使用炮筒指向的方向
+                const cannonBase = document.querySelector('.cannon-base');
+                const cannonRect = cannonBase.getBoundingClientRect();
+                const cannonCenter = {
+                    x: cannonRect.left + cannonRect.width / 2,
+                    y: cannonRect.top + cannonRect.height / 2
+                };
+                
+                // 计算炮筒指向的方向
+                const angleRad = gameState.cannonAngle * Math.PI / 180;
+                const lineEnd = {
+                    x: cannonCenter.x + Math.cos(angleRad) * 1000,
+                    y: cannonCenter.y + Math.sin(angleRad) * 1000
+                };
+                
+                console.log('炮筒中心坐标:', cannonCenter.x, cannonCenter.y);
+                console.log('炮筒指向终点坐标:', lineEnd.x, lineEnd.y);
+                
+                // 找出离炮筒指向方向最近的蚊子
+                closestMosquito = findClosestMosquitoToLine(cannonCenter, lineEnd);
+            }
+            
+            if (closestMosquito) {
+                console.log('找到最近的蚊子:', {
+                    id: closestMosquito.id,
+                    x: closestMosquito.x,
+                    y: closestMosquito.y,
+                    element: closestMosquito.element
+                });
+                
+                // 标记蚊子
+                markMosquito(closestMosquito);
+                
+                // 更新最后发射时间
+                lastFireTime = now;
+                
+                // 消耗1/3电力
+                gameState.power = Math.max(0, gameState.power - gameState.maxPower / 3);
+                updatePowerBar();
+                
+                // 发射追踪飞弹
+                setTimeout(() => {
+                    createHomingMissile(closestMosquito);
+                }, 300);
+            } else {
+                console.log('未找到可锁定的蚊子');
+            }
+        }
     });
     
     // 鼠标移动时控制炮筒方向
+    let lastMousePos = { x: 0, y: 0 }; // 跟踪最后一次鼠标位置
     document.addEventListener('mousemove', (e) => {
-        // 排除按钮区域和炮筒区域
-        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn') || e.target.closest('.cannon-section')) {
+        // 排除按钮区域
+        if (e.target && typeof e.target.closest === 'function' && (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn'))) {
             return;
         }
         
-        // 检测是否为触摸设备
-        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        // 更新最后一次鼠标位置
+        lastMousePos = { x: e.clientX, y: e.clientY };
         
-        // 在触摸设备上，只在炮筒区域内响应鼠标移动事件
-        if (isTouchDevice) {
-            const cannonSection = document.querySelector('.cannon-section');
-            if (cannonSection) {
-                const cannonRect = cannonSection.getBoundingClientRect();
-                
-                // 检查是否在炮筒区域内（左右各扩展30像素，上下各扩展100像素）
-                if (!(e.clientX >= cannonRect.left - 30 && e.clientX <= cannonRect.right + 30 && 
-                      e.clientY >= cannonRect.top - 100 && e.clientY <= cannonRect.bottom + 100)) {
-                    return;
-                }
-            }
+        const gameArea = document.querySelector('.game-area');
+        const cannonSection = document.querySelector('.cannon-section');
+        const cannonBarrel = document.getElementById('cannonBarrel');
+        
+        if (!gameArea || !cannonSection || !cannonBarrel) {
+            return;
         }
         
-        const gameAreaRect = document.querySelector('.game-area').getBoundingClientRect();
-        const gameCenterX = gameAreaRect.left + gameAreaRect.width / 2;
+        // 获取炮筒位置信息
+        const cannonRect = cannonSection.getBoundingClientRect();
         
-        // 计算鼠标位置与游戏中心的水平距离
-        const deltaX = e.clientX - gameCenterX;
+        // 计算炮底位置（炮身与炮台的交接点）
+        const cannonBaseX = cannonRect.left + cannonRect.width / 2;
+        const cannonBaseY = cannonRect.bottom;
         
-        // 计算目标角度（限制在垂直方向(-90度)左右各60度）
-        let targetAngle = -90 + (deltaX / gameAreaRect.width) * 120;
-        targetAngle = Math.max(-150, Math.min(-30, targetAngle));
+        // 计算鼠标相对于炮底的角度
+        const deltaX = e.clientX - cannonBaseX;
+        const deltaY = e.clientY - cannonBaseY;
         
-        // 平滑调整角度
-        gameState.cannonAngle += (targetAngle - gameState.cannonAngle) * 0.1;
+        // 计算角度（弧度转角度）- 修正角度计算
+        let angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI - 90;
         
-        // 更新炮筒位置
+        // 直接设置角度，不使用平滑过渡，确保实时跟随
+        gameState.cannonAngle = angle;
+        
+        // 更新炮筒位置 - 隐藏真实炮筒，只显示模拟的炮筒线条
+        cannonBarrel.style.display = 'none'; // 隐藏真实炮筒
+        cannonBarrel.style.transformOrigin = '50% 100%'; // 确保旋转中心在炮底
         cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
+        
+        // 显示红线从炮底到鼠标，下面1/3段为黑色
+        // 移除旧的红线
+        const oldRedLine = document.getElementById('cannonMouseLine');
+        if (oldRedLine) {
+            oldRedLine.remove();
+        }
+        
+        // 创建黑色炮筒部分（下面1/3）
+        let cannonLine = document.getElementById('cannonLine');
+        if (!cannonLine) {
+            cannonLine = document.createElement('div');
+            cannonLine.id = 'cannonLine';
+            cannonLine.style.position = 'fixed';
+            cannonLine.style.height = '30px'; // 加粗到30像素
+            cannonLine.style.background = 'linear-gradient(135deg, #444 0%, #666 50%, #444 100%)'; // 与炮台相同的渐变
+            cannonLine.style.border = '2px solid #333'; // 与炮台相同的边框
+            cannonLine.style.zIndex = '10'; // 降低z-index，确保炮台显示在上面
+            cannonLine.style.pointerEvents = 'none';
+            cannonLine.style.borderRadius = '0'; // 移除圆角，使炮筒上下都是平头
+            document.body.appendChild(cannonLine);
+        }
+        
+        // 创建红色激光部分（上面2/3）
+        let laserLine = document.getElementById('laserLine');
+        if (!laserLine) {
+            laserLine = document.createElement('div');
+            laserLine.id = 'laserLine';
+            laserLine.style.position = 'fixed';
+            laserLine.style.height = '2px'; // 红线保持不变
+            laserLine.style.backgroundColor = 'red';
+            laserLine.style.zIndex = '11'; // 激光显示在炮筒上面
+            laserLine.style.pointerEvents = 'none';
+            document.body.appendChild(laserLine);
+        }
+        
+        // 计算线的长度和角度
+        const lineLength = Math.sqrt(Math.pow(e.clientX - cannonBaseX, 2) + Math.pow(e.clientY - cannonBaseY, 2));
+        const lineAngle = Math.atan2(e.clientY - cannonBaseY, e.clientX - cannonBaseX) * 180 / Math.PI;
+        
+        // 更新当前红线角度
+        currentLineAngle = lineAngle;
+        
+        // 计算炮筒和激光的长度
+        const cannonLength = 150; // 增加到150像素
+        
+        // 计算炮筒角度弧度
+        const cannonAngleRad = lineAngle * Math.PI / 180;
+        
+        // 计算炮筒末端位置
+        const cannonEndX = cannonBaseX + Math.cos(cannonAngleRad) * cannonLength;
+        const cannonEndY = cannonBaseY + Math.sin(cannonAngleRad) * cannonLength;
+        
+        // 确保炮筒只显示在炮台上方
+        let adjustedCannonLength = cannonLength;
+        let showCannon = true;
+        
+        // 如果炮筒末端在炮台下方，调整炮筒长度
+        if (cannonEndY > cannonBaseY) {
+            // 计算炮筒与炮台底部的交点
+            // 当y = cannonBaseY时，求解x
+            // y = cannonBaseY + sin(angle) * length
+            // 解方程：cannonBaseY = cannonBaseY + sin(angle) * length
+            // sin(angle) * length = 0
+            // 如果sin(angle) != 0，length = 0
+            adjustedCannonLength = 0;
+            showCannon = false;
+        }
+        
+        // 计算激光长度
+        const laserLength = Math.max(0, lineLength - adjustedCannonLength);
+        
+        // 移除旧的炮筒线条（如果存在）
+        const oldCannonLine = document.getElementById('cannonLine');
+        if (oldCannonLine) {
+            oldCannonLine.remove();
+        }
+        
+        // 移除旧的炮口加粗部分（如果存在）
+        const oldMuzzleLine = document.getElementById('muzzleLine');
+        if (oldMuzzleLine) {
+            oldMuzzleLine.remove();
+        }
+        
+        // 创建黑色炮筒部分（下面1/3）
+        cannonLine = document.createElement('div');
+        cannonLine.id = 'cannonLine';
+        cannonLine.style.position = 'fixed';
+        cannonLine.style.height = '30px'; // 加粗到30像素
+        cannonLine.style.background = 'linear-gradient(135deg, #444 0%, #666 50%, #444 100%)'; // 与炮台相同的渐变
+        cannonLine.style.border = '2px solid #333'; // 与炮台相同的边框
+        cannonLine.style.zIndex = '10'; // 降低z-index，确保炮台显示在上面
+        cannonLine.style.pointerEvents = 'none';
+        cannonLine.style.borderRadius = '0'; // 移除圆角，使炮筒上下都是平头
+        document.body.appendChild(cannonLine);
+        
+        // 设置炮筒部分（黑色）
+        cannonLine.style.width = `${adjustedCannonLength}px`;
+        cannonLine.style.left = `${cannonBaseX}px`;
+        cannonLine.style.top = `${cannonBaseY - 15}px`; // 调整垂直位置，使线条居中
+        cannonLine.style.transformOrigin = '0 50%';
+        cannonLine.style.transform = `rotate(${lineAngle}deg)`;
+        cannonLine.style.display = showCannon ? 'block' : 'none';
+        
+        // 创建炮口加粗部分
+        if (showCannon && adjustedCannonLength >= 30) {
+            const muzzleLine = document.createElement('div');
+            muzzleLine.id = 'muzzleLine';
+            muzzleLine.style.position = 'fixed';
+            muzzleLine.style.height = '50px'; // 比炮筒粗20px（左右各10px）
+            muzzleLine.style.background = 'linear-gradient(135deg, #444 0%, #666 50%, #444 100%)'; // 与炮台相同的渐变
+            muzzleLine.style.border = '2px solid #333'; // 与炮台相同的边框
+            muzzleLine.style.zIndex = '11'; // 高于炮筒主体，显示在外面
+            muzzleLine.style.pointerEvents = 'none';
+            muzzleLine.style.borderRadius = '0'; // 移除圆角，使炮筒上下都是平头
+            
+            // 计算炮口加粗部分的起始位置（从炮筒末端向前30像素）
+            const muzzleStartX = cannonBaseX + Math.cos(cannonAngleRad) * (adjustedCannonLength - 30);
+            const muzzleStartY = cannonBaseY + Math.sin(cannonAngleRad) * (adjustedCannonLength - 30);
+            
+            muzzleLine.style.width = '30px'; // 炮口长度30像素
+            muzzleLine.style.left = `${muzzleStartX}px`;
+            muzzleLine.style.top = `${muzzleStartY - 25}px`; // 调整垂直位置，使线条居中
+            muzzleLine.style.transformOrigin = '0 50%';
+            muzzleLine.style.transform = `rotate(${lineAngle}deg)`;
+            
+            document.body.appendChild(muzzleLine);
+        }
+        
+        // 设置激光部分（红色）
+        if (laserLength > 0 && showCannon) { // 只在炮筒显示时显示激光
+            // 计算激光起点（炮筒末端）
+            const laserStartX = cannonBaseX + Math.cos(cannonAngleRad) * adjustedCannonLength;
+            const laserStartY = cannonBaseY + Math.sin(cannonAngleRad) * adjustedCannonLength;
+            
+            laserLine.style.width = `${laserLength}px`;
+            laserLine.style.left = `${laserStartX}px`;
+            laserLine.style.top = `${laserStartY - 1}px`; // 调整垂直位置，使线条居中
+            laserLine.style.transformOrigin = '0 50%';
+            laserLine.style.transform = `rotate(${lineAngle}deg)`;
+            laserLine.style.display = 'none'; // 隐藏红线
+        } else {
+            laserLine.style.display = 'none';
+        }
+        
+        // 隐藏红点标记鼠标位置
+        const existingRedDot = document.getElementById('mouseRedDot');
+        if (existingRedDot) {
+            existingRedDot.remove();
+        }
     });
     
     // 禁用右键菜单
@@ -1761,16 +1967,25 @@ function createBullet() {
     // 获取游戏区域的位置
     const gameAreaRect = gameArea.getBoundingClientRect();
     
-    // 获取炮筒旋转角度
-    const angleRad = gameState.cannonAngle * Math.PI / 180;
+    // 计算红黑线交界处的位置（炮筒末端）
+    const cannonSection = document.querySelector('.cannon-section');
+    const cannonRect = cannonSection.getBoundingClientRect();
+    const cannonBaseX = cannonRect.left + cannonRect.width / 2;
+    const cannonBaseY = cannonRect.bottom;
     
-    // 获取炮口元素的位置（最准确的方式）
-    const muzzleElement = document.querySelector('.cannon-muzzle');
-    const muzzleRect = muzzleElement.getBoundingClientRect();
+    // 炮筒长度（与模拟炮筒相同）
+    const cannonLength = 150;
     
-    // 计算炮口中心点相对于游戏区域的位置
-    const startX = muzzleRect.left + muzzleRect.width / 2 - gameAreaRect.left;
-    const startY = muzzleRect.top + muzzleRect.height / 2 - gameAreaRect.top;
+    // 使用当前红线的角度（发射时的角度）
+    const angleRad = currentLineAngle * Math.PI / 180;
+    
+    // 计算炮筒末端位置（红黑线交界处）
+    const cannonEndX = cannonBaseX + Math.cos(angleRad) * cannonLength;
+    const cannonEndY = cannonBaseY + Math.sin(angleRad) * cannonLength;
+    
+    // 计算相对于游戏区域的位置
+    const startX = cannonEndX - gameAreaRect.left;
+    const startY = cannonEndY - gameAreaRect.top;
     
     // 设置炮弹初始位置（居中）
     bullet.style.left = (startX - 7.5) + 'px';
@@ -1778,7 +1993,7 @@ function createBullet() {
     
     gameArea.appendChild(bullet);
     
-    // 计算飞行方向
+    // 计算飞行方向（沿着红线方向）
     const speed = 15;
     const vx = Math.cos(angleRad) * speed;
     const vy = Math.sin(angleRad) * speed;
@@ -1938,16 +2153,6 @@ function showGameOver(reason = 'win') {
     // 保存最高分数
     saveHighScore();
     
-    // 调用SDK的游戏结束事件
-    try {
-        if (window.CrazyGames && window.CrazyGames.SDK) {
-            console.log('Calling SDK.gameplayStop()');
-            window.CrazyGames.SDK.game.gameplayStop();
-        }
-    } catch (error) {
-        console.warn('Error calling SDK.gameplayStop():', error);
-    }
-    
     // 根据游戏结束原因设置不同的提示信息
     const gameOverText = document.querySelector('#gameOverModal .modal-content h2');
     const gameOverMessage = document.querySelector('#gameOverModal .modal-content p');
@@ -2062,16 +2267,6 @@ async function restartGame() {
     // 重新开始背景音乐
     bgmStarted = true;
     resumeBGM();
-    
-    // 调用SDK的游戏开始事件
-    try {
-        if (window.CrazyGames && window.CrazyGames.SDK) {
-            console.log('Calling SDK.gameplayStart()');
-            window.CrazyGames.SDK.game.gameplayStart();
-        }
-    } catch (error) {
-        console.warn('Error calling SDK.gameplayStart():', error);
-    }
 }
 
 // 显示准备界面
@@ -2100,16 +2295,6 @@ function showReadyModal() {
         // 重新开始背景音乐
         bgmStarted = true;
         resumeBGM();
-        
-        // 调用SDK的游戏开始事件
-        try {
-            if (window.CrazyGames && window.CrazyGames.SDK) {
-                console.log('Calling SDK.gameplayStart()');
-                window.CrazyGames.SDK.game.gameplayStart();
-            }
-        } catch (error) {
-            console.warn('Error calling SDK.gameplayStart():', error);
-        }
     });
 }
 
@@ -2155,7 +2340,8 @@ function findClosestMosquitoToLine(lineStart, lineEnd) {
     let minDistance = Infinity;
     
     gameState.mosquitoes.forEach(mosquito => {
-        if (mosquito.element.style.opacity === '0') return;
+        // 移除对透明度的检查，允许锁定隐身的蚊子
+        // if (mosquito.element.style.opacity === '0') return;
         
         const rect = mosquito.element.getBoundingClientRect();
         const mosquitoPos = {
@@ -2179,8 +2365,11 @@ function findClosestMosquitoToPoint(point) {
     let closestMosquito = null;
     let minDistance = Infinity;
     
+    console.log('开始查找离点击位置最近的蚊子，点击位置:', point.x, point.y);
+    
     gameState.mosquitoes.forEach(mosquito => {
-        if (mosquito.element.style.opacity === '0') return;
+        // 移除对透明度的检查，允许锁定隐身的蚊子
+        // if (mosquito.element.style.opacity === '0') return;
         
         const rect = mosquito.element.getBoundingClientRect();
         const mosquitoPos = {
@@ -2192,11 +2381,16 @@ function findClosestMosquitoToPoint(point) {
         const dy = mosquitoPos.y - point.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
+        console.log('蚊子ID:', mosquito.id, '坐标:', mosquitoPos.x, mosquitoPos.y, '距离:', distance.toFixed(2));
+        
         if (distance < minDistance) {
             minDistance = distance;
             closestMosquito = mosquito;
+            console.log('更新最近蚊子:', mosquito.id, '距离:', minDistance.toFixed(2));
         }
     });
+    
+    console.log('最终找到的最近蚊子:', closestMosquito ? closestMosquito.id : '无', '最小距离:', minDistance.toFixed(2));
     
     return closestMosquito;
 }
