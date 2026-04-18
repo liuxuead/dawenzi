@@ -173,6 +173,53 @@ function activateLaser() {
         laserLine.style.display = 'block';
     }
     
+    // 计算激光起点和方向
+    const cannonRect = cannonBarrel.getBoundingClientRect();
+    const gameAreaRect = gameArea.getBoundingClientRect();
+    const cannonCenterX = (cannonRect.left + cannonRect.right) / 2 - gameAreaRect.left;
+    const cannonCenterY = (cannonRect.top + cannonRect.bottom) / 2 - gameAreaRect.top;
+    const cannonLength = cannonBarrel.offsetWidth;
+    const angleRad = gameState.cannonAngle * Math.PI / 180;
+    const laserStartX = cannonCenterX + Math.cos(angleRad) * cannonLength;
+    const laserStartY = cannonCenterY + Math.sin(angleRad) * cannonLength;
+    const endX = laserStartX + Math.cos(angleRad) * 10000;
+    const endY = laserStartY + Math.sin(angleRad) * 10000;
+    
+    // 立即消灭路径上的所有蚊子
+    const mosquitoesToRemove = [];
+    gameState.mosquitoes.forEach(mosquito => {
+        if (mosquito.element && mosquito.element.style.opacity !== '0') {
+            const mosquitoRect = mosquito.element.getBoundingClientRect();
+            const mosquitoX = (mosquitoRect.left + mosquitoRect.right) / 2 - gameAreaRect.left;
+            const mosquitoY = (mosquitoRect.top + mosquitoRect.bottom) / 2 - gameAreaRect.top;
+            
+            const distance = pointToLineDistance(mosquitoX, mosquitoY, laserStartX, laserStartY, endX, endY);
+            
+            if (distance < 20) {
+                gameState.score += 10;
+                updateScore();
+                
+                mosquito.element.style.animation = 'disappear 0.5s forwards';
+                mosquitoesToRemove.push(mosquito.id);
+            }
+        }
+    });
+    
+    mosquitoesToRemove.forEach(id => {
+        const mosquito = gameState.mosquitoes.find(m => m.id === id);
+        if (mosquito && mosquito.element) {
+            setTimeout(() => {
+                mosquito.element.remove();
+                gameState.mosquitoes = gameState.mosquitoes.filter(m => m.id !== id);
+                
+                if (gameState.mosquitoes.length === 0) {
+                    gameState.level++;
+                    showReadyModal();
+                }
+            }, 500);
+        }
+    });
+    
     // 开始激光更新
     updateLaser();
     
