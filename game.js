@@ -292,13 +292,13 @@ function updateLaser() {
         // 移动端：使用cannonBarrel
         if (!cannonBarrel) return;
         const cannonRect = cannonBarrel.getBoundingClientRect();
-        const gameAreaRect = gameArea.getBoundingClientRect();
-        laserStartX = (cannonRect.left + cannonRect.right) / 2 - gameAreaRect.left;
-        laserStartY = (cannonRect.top + cannonRect.bottom) / 2 - gameAreaRect.top;
         
-        // 计算激光方向（根据炮筒角度）
-        const angleRad = gameState.cannonAngle * Math.PI / 180;
-        lineAngle = gameState.cannonAngle + 90; // 转换为与CSS旋转一致的角度
+        // 计算激光起点（屏幕绝对坐标）
+        laserStartX = (cannonRect.left + cannonRect.right) / 2;
+        laserStartY = (cannonRect.top + cannonRect.bottom) / 2;
+        
+        // 计算激光方向（根据炮筒角度，转换为与CSS旋转一致的角度）
+        lineAngle = gameState.cannonAngle + 90;
     } else {
         // PC端：使用与炮筒一致的起点和角度计算方式
         const cannonSection = document.querySelector('.cannon-section');
