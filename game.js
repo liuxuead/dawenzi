@@ -1187,51 +1187,40 @@ function bindEvents() {
             }
         }
         
-        // 获取炮底位置
-        const cannonBase = document.querySelector('.cannon-base');
-        if (!cannonBase) {
-            console.log('找不到炮底元素');
-            return;
-        }
+        // 检查是否在炮筒区域内
+        const cannonSection = document.querySelector('.cannon-section');
+        if (!cannonSection) return;
         
-        const cannonRect = cannonBase.getBoundingClientRect();
-        const cannonBaseX = cannonRect.left + cannonRect.width / 2;
-        const cannonBaseY = cannonRect.top + cannonRect.height / 2;
-        
-        // 获取触摸位置
         const touch = e.touches[0];
-        const touchX = touch.clientX;
-        const touchY = touch.clientY;
+        const cannonRect = cannonSection.getBoundingClientRect();
         
-        // 计算手指位置相对于炮底的角度
-        const deltaX = touchX - cannonBaseX;
-        const deltaY = touchY - cannonBaseY;
-        const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI - 90;
-        
-        // 限制角度范围：垂直方向(-90度)左右各60度
-        // 向左最大：-90 - 60 = -150度
-        // 向右最大：-90 + 60 = -30度
-        let constrainedAngle = angle;
-        if (constrainedAngle < -150) constrainedAngle = -150;
-        if (constrainedAngle > -30) constrainedAngle = -30;
-        
-        // 直接设置炮筒角度，不使用平滑过渡，确保实时跟随
-        gameState.cannonAngle = constrainedAngle;
-        // 同时更新currentLineAngle，确保角度一致
-        currentLineAngle = constrainedAngle + 90; // 转换为红线角度（+90度偏移）
-        
-        // 更新炮筒显示
-        const cannonBarrel = document.getElementById('cannonBarrel');
-        if (cannonBarrel) {
-            cannonBarrel.style.transformOrigin = '50% 100%'; // 确保旋转中心在炮底
-            cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
+        // 扩大检测区域，包括炮筒延伸方向（左右各扩展30像素，上下各扩展100像素）
+        if (touch.clientX >= cannonRect.left - 30 && touch.clientX <= cannonRect.right + 30 && 
+            touch.clientY >= cannonRect.top - 100 && touch.clientY <= cannonRect.bottom + 100) {
+            // 如果是第一次进入炮筒区域，更新触摸起点
+            if (!touchStartX || !touchStartY) {
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+            }
+            
+            const deltaX = touch.clientX - touchStartX;
+            const deltaY = touch.clientY - touchStartY;
+            
+            // 只有当移动距离超过一定阈值时才阻止默认行为
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                e.preventDefault();
+                
+                // 计算角度变化（提高灵敏度）
+                const angleChange = deltaX * 0.8;
+                rotateCannon(angleChange);
+                
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+            }
         } else {
-            console.log('找不到炮筒元素');
-        }
-        
-        // 阻止默认行为，防止页面滚动
-        if (e.cancelable) {
-            e.preventDefault();
+            // 当手指离开炮筒区域时，重置触摸起点
+            touchStartX = null;
+            touchStartY = null;
         }
     }, { passive: false });
     
