@@ -119,7 +119,8 @@ function startEnergyCharging() {
     
     gameState.energyTimer = setInterval(() => {
         if (gameState.energy < gameState.maxEnergy) {
-            gameState.energy = Math.min(gameState.energy + 2, gameState.maxEnergy);
+            const chargeAmount = gameState.maxEnergy * 0.05;
+            gameState.energy = Math.min(gameState.energy + chargeAmount, gameState.maxEnergy);
             updateEnergyBar();
         }
     }, 1000);
@@ -132,6 +133,13 @@ function activateLaser() {
         return;
     }
     
+    // 消耗能量
+    if (gameState.energy < LASER_COST) {
+        return;
+    }
+    gameState.energy = Math.max(0, gameState.energy - LASER_COST);
+    updateEnergyBar();
+    
     laserActive = true;
     laserStartTime = Date.now();
     
@@ -140,13 +148,13 @@ function activateLaser() {
         // If laser line element doesn't exist or not in DOM, recreate it
         laserLine = document.createElement('div');
         laserLine.className = 'laser-line';
-        laserLine.style.position = 'absolute';
+        laserLine.style.position = 'fixed'; // 使用fixed定位，与红黑线一致
         laserLine.style.height = '2px';
         laserLine.style.backgroundColor = '#4CAF50';
-        laserLine.style.zIndex = '999';
+        laserLine.style.zIndex = '12'; // 激光显示在红黑线上面
         laserLine.style.pointerEvents = 'none';
         laserLine.style.boxShadow = '0 0 10px #4CAF50, 0 0 20px #4CAF50';
-        gameArea.appendChild(laserLine);
+        document.body.appendChild(laserLine);
     } else {
         laserLine.style.display = 'block';
     }
@@ -154,56 +162,10 @@ function activateLaser() {
     // Start laser update
     updateLaser();
     
-    // Immediately eliminate all mosquitoes in path
-    const cannonRect = cannonBarrel.getBoundingClientRect();
-    const gameAreaRect = gameArea.getBoundingClientRect();
-    
-    const cannonX = (cannonRect.left + cannonRect.right) / 2 - gameAreaRect.left;
-    const cannonY = (cannonRect.top + cannonRect.bottom) / 2 - gameAreaRect.top;
-    
-    const angleRad = gameState.cannonAngle * Math.PI / 180;
-    const endX = cannonX + Math.cos(angleRad) * 10000;
-    const endY = cannonY + Math.sin(angleRad) * 10000;
-    
-    const mosquitoesToRemove = [];
-    
-    gameState.mosquitoes.forEach(mosquito => {
-        if (mosquito.element && mosquito.element.style.opacity !== '0') {
-            const mosquitoRect = mosquito.element.getBoundingClientRect();
-            const mosquitoX = (mosquitoRect.left + mosquitoRect.right) / 2 - gameAreaRect.left;
-            const mosquitoY = (mosquitoRect.top + mosquitoRect.bottom) / 2 - gameAreaRect.top;
-            
-            const distance = pointToLineDistance(mosquitoX, mosquitoY, cannonX, cannonY, endX, endY);
-            
-            if (distance < 20) {
-                gameState.score += 10;
-                updateScore();
-                
-                mosquito.element.style.animation = 'disappear 0.5s forwards';
-                mosquitoesToRemove.push(mosquito.id);
-            }
-        }
-    });
-    
-    mosquitoesToRemove.forEach(id => {
-        const mosquito = gameState.mosquitoes.find(m => m.id === id);
-        if (mosquito && mosquito.element) {
-            setTimeout(() => {
-                mosquito.element.remove();
-                gameState.mosquitoes = gameState.mosquitoes.filter(m => m.id !== id);
-                
-                if (gameState.mosquitoes.length === 0) {
-                    gameState.level++;
-                    showReadyModal();
-                }
-            }, 500);
-        }
-    });
-    
-    // Close laser after 0.2 seconds
+    // Close laser after 0.5 seconds
     setTimeout(() => {
         deactivateLaser();
-    }, 200);
+    }, LASER_DURATION);
 }
 
 // Deactivate laser sight
@@ -314,6 +276,27 @@ function pointToLineDistance(px, py, x1, y1, x2, y2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
+// 更新雷达尺寸，使其与游戏画面保持相同宽高比
+function updateRadarSize() {
+    if (!gameArea || !radar) return;
+    
+    const gameAreaRect = gameArea.getBoundingClientRect();
+    const aspectRatio = gameAreaRect.width / gameAreaRect.height;
+    
+    // 设定雷达的基准大小（最大边80px）
+    const maxSize = 80;
+    
+    if (aspectRatio >= 1) {
+        // 游戏画面是横屏或正方形
+        radar.style.width = maxSize + 'px';
+        radar.style.height = (maxSize / aspectRatio) + 'px';
+    } else {
+        // 游戏画面是竖屏
+        radar.style.height = maxSize + 'px';
+        radar.style.width = (maxSize * aspectRatio) + 'px';
+    }
+}
+
 // 初始化
 async function init() {
     console.log('Game init started');
@@ -336,6 +319,9 @@ async function init() {
         }
     }
     
+    // 先更新雷达尺寸
+    updateRadarSize();
+    
     initCanvas();
     updateBackground();
     updatePowerBar();
@@ -348,6 +334,15 @@ async function init() {
     startEnergyCharging();
     bindEvents();
     initBGM();
+    
+    // 初始化时让炮筒指向当前鼠标位置
+    setTimeout(() => {
+        const event = new MouseEvent('mousemove', {
+            clientX: window.innerWidth / 2,
+            clientY: window.innerHeight / 2
+        });
+        document.dispatchEvent(event);
+    }, 100);
     
     // 调用 restartGame 来确保游戏状态与重新开始后的状态一致
     await restartGame();
@@ -1015,6 +1010,11 @@ let laserStartTime = 0;
 const LASER_DURATION = 3000; // 激光持续时间3秒
 const LASER_COST = 10; // 每次使用激光消耗10点能量
 
+// 鼠标位置相关变量
+let mouseX = 0;
+let mouseY = 0;
+let isMouseDown = false;
+
 // 绑定事件
 function bindEvents() {
     // 红色按钮 - 发射
@@ -1205,6 +1205,202 @@ function bindEvents() {
             lastCannonTapTime = now;
         });
     }
+    
+    // 双击屏幕发射（全屏有效，排除按钮）
+    document.addEventListener('touchend', (e) => {
+        // 排除按钮区域和炮筒区域（炮筒区域有单独的双击事件）
+    });
+    
+    // PC端鼠标控制
+    document.addEventListener('mousemove', (e) => {
+        // 只在PC端（非触摸屏）处理鼠标控制
+        if (window.matchMedia('(pointer: coarse)').matches) {
+            return;
+        }
+        
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        
+        // 隐藏真实炮筒，只显示模拟的炮筒线条
+        cannonBarrel.style.display = 'none';
+        
+        // 获取炮台底座位置
+        const cannonBase = document.querySelector('.cannon-base');
+        if (!cannonBase) return;
+        
+        const cannonBaseRect = cannonBase.getBoundingClientRect();
+        const cannonBaseX = cannonBaseRect.left + cannonBaseRect.width / 2;
+        const cannonBaseY = cannonBaseRect.top + cannonBaseRect.height / 2;
+        
+        // 计算鼠标位置到炮筒的角度
+        const angle = Math.atan2(mouseY - cannonBaseY, mouseX - cannonBaseX) * 180 / Math.PI;
+        gameState.cannonAngle = angle - 90;
+        
+        // 显示线条从炮底到鼠标，下面1/3段为黑色
+        // 创建黑色炮筒部分
+        let cannonLine = document.getElementById('cannonLine');
+        if (!cannonLine) {
+            cannonLine = document.createElement('div');
+            cannonLine.id = 'cannonLine';
+            cannonLine.style.position = 'fixed';
+            cannonLine.style.height = '30px';
+            cannonLine.style.background = 'linear-gradient(135deg, #444 0%, #666 50%, #444 100%)';
+            cannonLine.style.border = '2px solid #333';
+            cannonLine.style.zIndex = '10';
+            cannonLine.style.pointerEvents = 'none';
+            cannonLine.style.borderRadius = '0';
+            document.body.appendChild(cannonLine);
+        }
+        
+        // 创建红色瞄准线部分
+        let aimLine = document.getElementById('aimLine');
+        if (!aimLine) {
+            aimLine = document.createElement('div');
+            aimLine.id = 'aimLine';
+            aimLine.style.position = 'fixed';
+            aimLine.style.height = '2px';
+            aimLine.style.backgroundColor = 'red';
+            aimLine.style.zIndex = '11';
+            aimLine.style.pointerEvents = 'none';
+            document.body.appendChild(aimLine);
+        }
+        
+        // 计算线的长度和角度
+        const lineLength = Math.sqrt(Math.pow(e.clientX - cannonBaseX, 2) + Math.pow(e.clientY - cannonBaseY, 2));
+        const lineAngle = Math.atan2(e.clientY - cannonBaseY, e.clientX - cannonBaseX) * 180 / Math.PI;
+        
+        // 计算炮筒和激光的长度
+        const cannonLength = 150;
+        const cannonAngleRad = lineAngle * Math.PI / 180;
+        
+        // 计算炮筒末端位置
+        const cannonEndX = cannonBaseX + Math.cos(cannonAngleRad) * cannonLength;
+        const cannonEndY = cannonBaseY + Math.sin(cannonAngleRad) * cannonLength;
+        
+        // 确保炮筒只显示在炮台上方
+        let adjustedCannonLength = cannonLength;
+        let showCannon = true;
+        
+        if (cannonEndY > cannonBaseY) {
+            adjustedCannonLength = 0;
+            showCannon = false;
+        }
+        
+        // 计算激光长度
+        const laserLength = Math.max(0, lineLength - adjustedCannonLength);
+        
+        // 设置炮筒部分（黑色）
+        cannonLine.style.width = `${adjustedCannonLength}px`;
+        cannonLine.style.left = `${cannonBaseX}px`;
+        cannonLine.style.top = `${cannonBaseY - 15}px`;
+        cannonLine.style.transformOrigin = '0 50%';
+        cannonLine.style.transform = `rotate(${lineAngle}deg)`;
+        cannonLine.style.display = showCannon ? 'block' : 'none';
+        
+        // 创建炮口加粗部分
+        const oldMuzzleLine = document.getElementById('muzzleLine');
+        if (oldMuzzleLine) {
+            oldMuzzleLine.remove();
+        }
+        
+        if (showCannon && adjustedCannonLength >= 30) {
+            const muzzleLine = document.createElement('div');
+            muzzleLine.id = 'muzzleLine';
+            muzzleLine.style.position = 'fixed';
+            muzzleLine.style.height = '50px';
+            muzzleLine.style.background = 'linear-gradient(135deg, #444 0%, #666 50%, #444 100%)';
+            muzzleLine.style.border = '2px solid #333';
+            muzzleLine.style.zIndex = '11';
+            muzzleLine.style.pointerEvents = 'none';
+            muzzleLine.style.borderRadius = '0';
+            
+            const muzzleStartX = cannonBaseX + Math.cos(cannonAngleRad) * (adjustedCannonLength - 30);
+            const muzzleStartY = cannonBaseY + Math.sin(cannonAngleRad) * (adjustedCannonLength - 30);
+            
+            muzzleLine.style.width = '30px';
+            muzzleLine.style.left = `${muzzleStartX}px`;
+            muzzleLine.style.top = `${muzzleStartY - 25}px`;
+            muzzleLine.style.transformOrigin = '0 50%';
+            muzzleLine.style.transform = `rotate(${lineAngle}deg)`;
+            
+            document.body.appendChild(muzzleLine);
+        }
+        
+        // 设置激光部分（红色）
+        if (laserLength > 0 && showCannon) {
+            const laserStartX = cannonBaseX + Math.cos(cannonAngleRad) * adjustedCannonLength;
+            const laserStartY = cannonBaseY + Math.sin(cannonAngleRad) * adjustedCannonLength;
+            
+            aimLine.style.width = `${laserLength}px`;
+            aimLine.style.left = `${laserStartX}px`;
+            aimLine.style.top = `${laserStartY - 1}px`;
+            aimLine.style.transformOrigin = '0 50%';
+            aimLine.style.transform = `rotate(${lineAngle}deg)`;
+            aimLine.style.display = 'block';
+        } else {
+            aimLine.style.display = 'none';
+        }
+    });
+    
+    // PC端鼠标点击发射
+    document.addEventListener('mousedown', (e) => {
+        // 只在PC端处理
+        if (window.matchMedia('(pointer: coarse)').matches) {
+            return;
+        }
+        
+        // 排除按钮区域
+        if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
+            return;
+        }
+        
+        // 左键点击发射
+        if (e.button === 0) {
+            // 防抖动：300ms内只能发射一次
+            const now = Date.now();
+            if (now - lastFireTime < 300) {
+                return;
+            }
+            lastFireTime = now;
+            
+            startBGMOnFirstInteraction();
+            setActiveButton('red');
+            fire();
+        }
+        // 右键长按激活激光
+        else if (e.button === 2) {
+            e.preventDefault(); // 阻止右键菜单
+            
+            longPressTimer = setTimeout(() => {
+                if (gameState.energy >= LASER_COST) {
+                    // 消耗能量
+                    gameState.energy = Math.max(0, gameState.energy - LASER_COST);
+                    updateEnergyBar();
+                    
+                    // 激活激光瞄准线
+                    activateLaser();
+                }
+            }, 1000);
+        }
+    });
+    
+    // 鼠标释放
+    document.addEventListener('mouseup', (e) => {
+        // 只在PC端处理
+        if (window.matchMedia('(pointer: coarse)').matches) {
+            return;
+        }
+        
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    });
+    
+    // 阻止右键菜单
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
     
     // 双击屏幕发射（全屏有效，排除按钮）
     document.addEventListener('touchend', (e) => {
