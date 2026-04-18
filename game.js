@@ -119,7 +119,8 @@ function startEnergyCharging() {
     
     gameState.energyTimer = setInterval(() => {
         if (gameState.energy < gameState.maxEnergy) {
-            gameState.energy = Math.min(gameState.energy + 2, gameState.maxEnergy);
+            const chargeAmount = gameState.maxEnergy * 0.05;
+            gameState.energy = Math.min(gameState.energy + chargeAmount, gameState.maxEnergy);
             updateEnergyBar();
         }
     }, 1000);
@@ -154,10 +155,10 @@ function activateLaser() {
     // Start laser update
     updateLaser();
     
-    // Close laser after 0.4 seconds
+    // Close laser after 0.5 seconds
     setTimeout(() => {
         deactivateLaser();
-    }, 400);
+    }, 500);
 }
 
 // Deactivate laser sight
@@ -518,10 +519,14 @@ function createMosquito(mosquitoId, index) {
     mosquito.style.left = Math.random() * 80 + 10 + '%';
     mosquito.style.top = Math.random() * 60 + 10 + '%';
     
+    // 清空可能的文本内容
+    mosquito.textContent = '';
+    
     const img = document.createElement('img');
     img.className = 'mosquito-image';
     img.src = `wenzi${mosquitoId}.png`;
     img.alt = `蚊子${mosquitoId}`;
+    img.style.pointerEvents = 'none'; // 避免图片干扰点击
     mosquito.appendChild(img);
     
     gameArea.appendChild(mosquito);
@@ -1134,9 +1139,9 @@ function bindEvents() {
         
         // 长按检测：0.5秒后激活激光瞄准线
         longPressTimer = setTimeout(() => {
-            if (gameState.energy >= gameState.maxEnergy / 2) {
+            if (gameState.energy >= gameState.maxEnergy / 3) {
                 // 消耗能量
-                gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy / 2);
+                gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy / 3);
                 updateEnergyBar();
                 
                 // 激活激光瞄准线
@@ -1492,9 +1497,9 @@ function bindEvents() {
             // 长按检测：0.5秒后激活激光瞄准线
             mouseDownTime = now;
             longPressTimer = setTimeout(() => {
-                if (gameState.energy >= gameState.maxEnergy / 2) {
+                if (gameState.energy >= gameState.maxEnergy / 3) {
                     // 消耗能量
-                    gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy / 2);
+                    gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy / 3);
                     updateEnergyBar();
                     
                     // 激活激光瞄准线
