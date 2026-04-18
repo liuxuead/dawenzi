@@ -268,21 +268,23 @@ html, body {
     width: 80px;
     height: 80px;
     border: 2px solid #333;
-    border-radius: 50%;
+    border-radius: 8px;
     position: relative;
     flex-shrink: 0;
     background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .radar-circle {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 60%;
-    height: 60%;
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    height: 80%;
     border: 1px solid #999;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
+    border-radius: 4px;
 }
 
 .radar-crosshair {
@@ -711,7 +713,7 @@ html, body {
 .cannon-section {
     height: 60px;
     position: fixed;
-    bottom: 0;
+    bottom: -15px;
     left: 0;
     right: 0;
     display: flex;
@@ -981,8 +983,46 @@ html, body {
     }
 }
 
+/* 蚊子消失动画 */
+@keyframes disappear {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0);
+    }
+}
+
 .loading-content p {
     font-size: 20px;
     color: #4CAF50;
     margin: 0;
+}
+
+/* 禁止用户选择 */
+.mosquito {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
+}
+
+.mosquito-number {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.mosquito-image {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-drag: none;
 }

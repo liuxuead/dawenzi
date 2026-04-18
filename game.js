@@ -1402,8 +1402,45 @@ function bindEvents() {
     }
     
     // 双击屏幕发射（全屏有效，排除按钮）
+    let lastTapTime = 0;
+    let tapCount = 0;
+    
     document.addEventListener('touchend', (e) => {
+        // 只在移动端处理
+        if (!window.matchMedia('(pointer: coarse)').matches) {
+            return;
+        }
+        
         // 排除按钮区域和炮筒区域（炮筒区域有单独的双击事件）
+        const target = e.target;
+        if (target.closest('.cannon-section') || target.closest('.btn-red') || target.closest('.btn-green')) {
+            return;
+        }
+        
+        const now = Date.now();
+        const tapInterval = now - lastTapTime;
+        
+        if (tapInterval < 300) {
+            // 双击检测
+            tapCount++;
+            if (tapCount === 2) {
+                // 防抖动：300ms内只能发射一次
+                if (now - lastFireTime < 300) {
+                    return;
+                }
+                lastFireTime = now;
+                
+                startBGMOnFirstInteraction();
+                fire(); // 发射炮弹，会自动震动
+                
+                tapCount = 0;
+            }
+        } else {
+            // 重置双击计数
+            tapCount = 1;
+        }
+        
+        lastTapTime = now;
     });
     
     // PC端鼠标控制
