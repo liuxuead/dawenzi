@@ -1253,14 +1253,8 @@ function bindEvents() {
         
         // 长按检测：1秒后激活激光瞄准线
         longPressTimer = setTimeout(() => {
-            if (gameState.energy >= LASER_COST) {
-                // 消耗能量
-                gameState.energy = Math.max(0, gameState.energy - LASER_COST);
-                updateEnergyBar();
-                
-                // 激活激光瞄准线
-                activateLaser();
-            }
+            // 直接调用activateLaser函数，能量消耗由activateLaser函数内部处理
+            activateLaser();
         }, 1000);
         
         // 更新调试显示
@@ -1475,20 +1469,8 @@ function bindEvents() {
             document.body.appendChild(muzzleLine);
         }
         
-        // 设置激光部分（红色）
-        if (laserLength > 0 && showCannon) {
-            const laserStartX = cannonBaseX + Math.cos(cannonAngleRad) * adjustedCannonLength;
-            const laserStartY = cannonBaseY + Math.sin(cannonAngleRad) * adjustedCannonLength;
-            
-            aimLine.style.width = `${laserLength}px`;
-            aimLine.style.left = `${laserStartX}px`;
-            aimLine.style.top = `${laserStartY - 1}px`;
-            aimLine.style.transformOrigin = '0 50%';
-            aimLine.style.transform = `rotate(${lineAngle}deg)`;
-            aimLine.style.display = 'block';
-        } else {
-            aimLine.style.display = 'none';
-        }
+        // 隐藏红色瞄准线
+        aimLine.style.display = 'none';
     });
     
     // PC端鼠标控制
