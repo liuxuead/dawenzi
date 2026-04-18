@@ -1,4 +1,4 @@
-// 游戏状态
+// Game state
 const gameState = {
     power: 50,
     maxPower: 50,
@@ -19,7 +19,7 @@ const gameState = {
     gameOverReason: null
 };
 
-// 图片预加载函数
+// Image preload function
 function preloadImages(imageUrls) {
     return new Promise((resolve, reject) => {
         if (!imageUrls || imageUrls.length === 0) {
@@ -50,14 +50,14 @@ function preloadImages(imageUrls) {
     });
 }
 
-// 加载指定轮次的图片
+// Load images for specified level
 function loadLevelImages(level) {
     const images = [];
     
-    // 背景图片
+    // Background image
     images.push(`background${level}.jpg`);
     
-    // 蚊子图片
+    // Mosquito images
     for (let i = 1; i <= 5; i++) {
         images.push(`wenzi${i}.png`);
     }
@@ -65,7 +65,7 @@ function loadLevelImages(level) {
     return preloadImages(images);
 }
 
-// 蚊子分数配置
+// Mosquito score configuration
 const mosquitoScores = {
     1: 20,
     2: 50,
@@ -74,7 +74,7 @@ const mosquitoScores = {
     5: 10
 };
 
-// DOM 元素
+// DOM elements
 const powerFill = document.getElementById('powerFill');
 const energyFill = document.getElementById('energyFill');
 const playerHealthFill = document.getElementById('playerHealthFill');
@@ -96,7 +96,7 @@ const meizidanSound = document.getElementById('meizidanSound');
 const bgmSound = document.getElementById('bgmSound');
 const trailSvg = document.getElementById('trailSvg');
 
-// 开始电力自动增长
+// Start automatic power charging
 function startPowerCharging() {
     if (gameState.powerTimer) {
         clearInterval(gameState.powerTimer);
@@ -111,7 +111,7 @@ function startPowerCharging() {
     }, 1000);
 }
 
-// 开始能量自动恢复
+// Start automatic energy recovery
 function startEnergyCharging() {
     if (gameState.energyTimer) {
         clearInterval(gameState.energyTimer);
@@ -125,9 +125,9 @@ function startEnergyCharging() {
     }, 1000);
 }
 
-// 激活激光瞄准线
+// Activate laser sight
 function activateLaser() {
-    // 如果激光已经激活，不重复激活
+    // If laser is already active, don't activate again
     if (laserActive) {
         return;
     }
@@ -135,9 +135,9 @@ function activateLaser() {
     laserActive = true;
     laserStartTime = Date.now();
     
-    // 创建激光瞄准线元素
+    // Create laser sight element
     if (!laserLine || !laserLine.parentNode) {
-        // 如果激光线元素不存在或不在DOM中，重新创建
+        // If laser line element doesn't exist or not in DOM, recreate it
         laserLine = document.createElement('div');
         laserLine.className = 'laser-line';
         laserLine.style.position = 'absolute';
@@ -151,10 +151,10 @@ function activateLaser() {
         laserLine.style.display = 'block';
     }
     
-    // 开始激光更新
+    // Start laser update
     updateLaser();
     
-    // 立即消灭路径上的所有蚊子
+    // Immediately eliminate all mosquitoes in path
     const cannonRect = cannonBarrel.getBoundingClientRect();
     const gameAreaRect = gameArea.getBoundingClientRect();
     
@@ -200,20 +200,20 @@ function activateLaser() {
         }
     });
     
-    // 0.2秒后关闭激光
+    // Close laser after 0.2 seconds
     setTimeout(() => {
         deactivateLaser();
     }, 200);
 }
 
-// 关闭激光瞄准线
+// Deactivate laser sight
 function deactivateLaser() {
     laserActive = false;
     if (laserLine) {
         laserLine.style.display = 'none';
     }
     
-    // 恢复所有蚊子的颜色
+    // Restore all mosquitoes' colors
     gameState.mosquitoes.forEach(mosquito => {
         if (mosquito.element) {
             mosquito.element.style.filter = '';
@@ -1727,28 +1727,19 @@ function createBullet() {
     const bullet = document.createElement('div');
     bullet.className = 'bullet';
     
-    // 获取游戏区域的位置和尺寸
+    // 获取游戏区域的位置
     const gameAreaRect = gameArea.getBoundingClientRect();
     
-    // 计算炮口位置（炮筒末端）
+    // 获取炮筒旋转角度
     const angleRad = gameState.cannonAngle * Math.PI / 180;
-    const cannonLength = cannonBarrel.offsetWidth;
     
-    // 炮筒旋转中心（根据CSS计算）
-    // left: 50%, margin-left: -5px
-    const pivotX = gameAreaRect.width / 2 - 5;
-    // 炮筒在游戏区域下方，需要获取炮筒相对于游戏区域的实际位置
-    const cannonRect = cannonBarrel.getBoundingClientRect();
-    // 炮筒旋转中心是CSS中的transform-origin: left center
-    // 也就是炮筒的左端中心点
-    const pivotY = cannonRect.top + cannonRect.height / 2 - gameAreaRect.top;
+    // 获取炮口元素的位置（最准确的方式）
+    const muzzleElement = document.querySelector('.cannon-muzzle');
+    const muzzleRect = muzzleElement.getBoundingClientRect();
     
-    // 炮口位置（右端点，根据角度计算）
-    const startX = pivotX + Math.cos(angleRad) * cannonLength;
-    const startY = pivotY + Math.sin(angleRad) * cannonLength;
-    
-    console.log('pivotY:', pivotY, 'gameAreaRect.top:', gameAreaRect.top, 'gameAreaRect.height:', gameAreaRect.height);
-    console.log('cannonRect.top:', cannonRect.top, 'cannonRect.height:', cannonRect.height);
+    // 计算炮口中心点相对于游戏区域的位置
+    const startX = muzzleRect.left + muzzleRect.width / 2 - gameAreaRect.left;
+    const startY = muzzleRect.top + muzzleRect.height / 2 - gameAreaRect.top;
     
     // 设置炮弹初始位置（居中）
     bullet.style.left = (startX - 7.5) + 'px';
