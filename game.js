@@ -142,7 +142,7 @@ function startPCEnergyCharging() {
 
 // Activate laser sight（移动端使用）
 function activateLaser() {
-    // If laser is already active, don't activate again
+    // 如果激光已经激活，不重复激活
     if (laserActive) {
         return;
     }
@@ -157,26 +157,26 @@ function activateLaser() {
     laserActive = true;
     laserStartTime = Date.now();
     
-    // Create laser sight element
+    // 创建激光瞄准线元素
     if (!laserLine || !laserLine.parentNode) {
-        // If laser line element doesn't exist or not in DOM, recreate it
+        // 如果激光线元素不存在或不在DOM中，重新创建
         laserLine = document.createElement('div');
         laserLine.className = 'laser-line';
-        laserLine.style.position = 'fixed'; // 使用fixed定位，与红黑线一致
+        laserLine.style.position = 'absolute';
         laserLine.style.height = '2px';
         laserLine.style.backgroundColor = '#4CAF50';
-        laserLine.style.zIndex = '9999'; // 激光显示在所有元素上面
+        laserLine.style.zIndex = '999';
         laserLine.style.pointerEvents = 'none';
         laserLine.style.boxShadow = '0 0 10px #4CAF50, 0 0 20px #4CAF50';
-        document.body.appendChild(laserLine);
+        gameArea.appendChild(laserLine);
     } else {
         laserLine.style.display = 'block';
     }
     
-    // Start laser update
+    // 开始激光更新
     updateLaser();
     
-    // Close laser after 0.2 seconds
+    // 关闭激光
     setTimeout(() => {
         deactivateLaser();
     }, LASER_DURATION);
