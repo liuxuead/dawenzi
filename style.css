@@ -713,7 +713,7 @@ html, body {
 .cannon-section {
     height: 60px;
     position: fixed;
-    bottom: 0;
+    bottom: -15px;
     left: 0;
     right: 0;
     display: flex;
