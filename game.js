@@ -1,4 +1,4 @@
-// 游戏状态
+// Game state
 const gameState = {
     power: 50,
     maxPower: 50,
@@ -19,7 +19,7 @@ const gameState = {
     gameOverReason: null
 };
 
-// 图片预加载函数
+// Image preload function
 function preloadImages(imageUrls) {
     return new Promise((resolve, reject) => {
         if (!imageUrls || imageUrls.length === 0) {
@@ -50,14 +50,14 @@ function preloadImages(imageUrls) {
     });
 }
 
-// 加载指定轮次的图片
+// Load images for specified level
 function loadLevelImages(level) {
     const images = [];
     
-    // 背景图片
+    // Background image
     images.push(`background${level}.jpg`);
     
-    // 蚊子图片
+    // Mosquito images
     for (let i = 1; i <= 5; i++) {
         images.push(`wenzi${i}.png`);
     }
@@ -65,7 +65,7 @@ function loadLevelImages(level) {
     return preloadImages(images);
 }
 
-// 蚊子分数配置
+// Mosquito score configuration
 const mosquitoScores = {
     1: 20,
     2: 50,
@@ -74,7 +74,7 @@ const mosquitoScores = {
     5: 10
 };
 
-// DOM 元素
+// DOM elements
 const powerFill = document.getElementById('powerFill');
 const energyFill = document.getElementById('energyFill');
 const playerHealthFill = document.getElementById('playerHealthFill');
@@ -96,7 +96,7 @@ const meizidanSound = document.getElementById('meizidanSound');
 const bgmSound = document.getElementById('bgmSound');
 const trailSvg = document.getElementById('trailSvg');
 
-// 开始电力自动增长
+// Start automatic power charging
 function startPowerCharging() {
     if (gameState.powerTimer) {
         clearInterval(gameState.powerTimer);
@@ -111,7 +111,7 @@ function startPowerCharging() {
     }, 1000);
 }
 
-// 开始能量自动恢复
+// Start automatic energy recovery
 function startEnergyCharging() {
     if (gameState.energyTimer) {
         clearInterval(gameState.energyTimer);
@@ -125,9 +125,9 @@ function startEnergyCharging() {
     }, 1000);
 }
 
-// 激活激光瞄准线
+// Activate laser sight
 function activateLaser() {
-    // 如果激光已经激活，不重复激活
+    // If laser is already active, don't activate again
     if (laserActive) {
         return;
     }
@@ -135,9 +135,9 @@ function activateLaser() {
     laserActive = true;
     laserStartTime = Date.now();
     
-    // 创建激光瞄准线元素
+    // Create laser sight element
     if (!laserLine || !laserLine.parentNode) {
-        // 如果激光线元素不存在或不在DOM中，重新创建
+        // If laser line element doesn't exist or not in DOM, recreate it
         laserLine = document.createElement('div');
         laserLine.className = 'laser-line';
         laserLine.style.position = 'absolute';
@@ -151,69 +151,23 @@ function activateLaser() {
         laserLine.style.display = 'block';
     }
     
-    // 开始激光更新
+    // Start laser update
     updateLaser();
     
-    // 立即消灭路径上的所有蚊子
-    const cannonRect = cannonBarrel.getBoundingClientRect();
-    const gameAreaRect = gameArea.getBoundingClientRect();
-    
-    const cannonX = (cannonRect.left + cannonRect.right) / 2 - gameAreaRect.left;
-    const cannonY = (cannonRect.top + cannonRect.bottom) / 2 - gameAreaRect.top;
-    
-    const angleRad = gameState.cannonAngle * Math.PI / 180;
-    const endX = cannonX + Math.cos(angleRad) * 10000;
-    const endY = cannonY + Math.sin(angleRad) * 10000;
-    
-    const mosquitoesToRemove = [];
-    
-    gameState.mosquitoes.forEach(mosquito => {
-        if (mosquito.element && mosquito.element.style.opacity !== '0') {
-            const mosquitoRect = mosquito.element.getBoundingClientRect();
-            const mosquitoX = (mosquitoRect.left + mosquitoRect.right) / 2 - gameAreaRect.left;
-            const mosquitoY = (mosquitoRect.top + mosquitoRect.bottom) / 2 - gameAreaRect.top;
-            
-            const distance = pointToLineDistance(mosquitoX, mosquitoY, cannonX, cannonY, endX, endY);
-            
-            if (distance < 20) {
-                gameState.score += 10;
-                updateScore();
-                
-                mosquito.element.style.animation = 'disappear 0.5s forwards';
-                mosquitoesToRemove.push(mosquito.id);
-            }
-        }
-    });
-    
-    mosquitoesToRemove.forEach(id => {
-        const mosquito = gameState.mosquitoes.find(m => m.id === id);
-        if (mosquito && mosquito.element) {
-            setTimeout(() => {
-                mosquito.element.remove();
-                gameState.mosquitoes = gameState.mosquitoes.filter(m => m.id !== id);
-                
-                if (gameState.mosquitoes.length === 0) {
-                    gameState.level++;
-                    showReadyModal();
-                }
-            }, 500);
-        }
-    });
-    
-    // 0.2秒后关闭激光
+    // Close laser after 0.4 seconds
     setTimeout(() => {
         deactivateLaser();
-    }, 200);
+    }, 400);
 }
 
-// 关闭激光瞄准线
+// Deactivate laser sight
 function deactivateLaser() {
     laserActive = false;
     if (laserLine) {
         laserLine.style.display = 'none';
     }
     
-    // 恢复所有蚊子的颜色
+    // Restore all mosquitoes' colors
     gameState.mosquitoes.forEach(mosquito => {
         if (mosquito.element) {
             mosquito.element.style.filter = '';
@@ -253,16 +207,18 @@ function updateLaser() {
     laserLine.style.transformOrigin = '0 0';
     laserLine.style.transform = `rotate(${lineAngle}deg)`;
     
-    // 恢复所有蚊子的颜色
+    // 恢复所有蚊子的颜色（跳过正在消失的蚊子）
     gameState.mosquitoes.forEach(mosquito => {
-        if (mosquito.element) {
+        if (mosquito.element && !mosquito.element.style.animation) {
             mosquito.element.style.filter = '';
         }
     });
     
-    // 给所有在激光线上的蚊子发绿光
+    // 检测并消灭激光线上的蚊子
+    const mosquitoesToRemove = [];
+    
     gameState.mosquitoes.forEach(mosquito => {
-        if (mosquito.element && mosquito.element.style.opacity !== '0') {
+        if (mosquito.element && mosquito.element.style.opacity !== '0' && !mosquito.element.style.animation) {
             const mosquitoRect = mosquito.element.getBoundingClientRect();
             const mosquitoX = (mosquitoRect.left + mosquitoRect.right) / 2 - gameAreaRect.left;
             const mosquitoY = (mosquitoRect.top + mosquitoRect.bottom) / 2 - gameAreaRect.top;
@@ -270,8 +226,40 @@ function updateLaser() {
             const distance = pointToLineDistance(mosquitoX, mosquitoY, cannonX, cannonY, endX, endY);
             
             if (distance < 20) {
+                // 给蚊子发绿光
                 mosquito.element.style.filter = 'brightness(1.5) drop-shadow(0 0 10px #4CAF50)';
+                
+                // 标记为要移除
+                gameState.score += 10;
+                updateScore();
+                
+                // 应用消失动画
+                mosquito.element.style.animation = 'disappear 0.5s forwards';
+                mosquitoesToRemove.push(mosquito.id);
+                
+                // 立即移除滤镜，避免与动画冲突
+                setTimeout(() => {
+                    if (mosquito.element) {
+                        mosquito.element.style.filter = '';
+                    }
+                }, 10);
             }
+        }
+    });
+    
+    // 处理要移除的蚊子
+    mosquitoesToRemove.forEach(id => {
+        const mosquito = gameState.mosquitoes.find(m => m.id === id);
+        if (mosquito && mosquito.element) {
+            setTimeout(() => {
+                mosquito.element.remove();
+                gameState.mosquitoes = gameState.mosquitoes.filter(m => m.id !== id);
+                
+                if (gameState.mosquitoes.length === 0) {
+                    gameState.level++;
+                    showReadyModal();
+                }
+            }, 500);
         }
     });
     
@@ -314,9 +302,40 @@ function pointToLineDistance(px, py, x1, y1, x2, y2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
+// 更新雷达尺寸，使其与游戏画面保持相同宽高比
+function updateRadarSize() {
+    if (!gameArea || !radar) return;
+    
+    const gameAreaRect = gameArea.getBoundingClientRect();
+    const aspectRatio = gameAreaRect.width / gameAreaRect.height;
+    
+    // 设定雷达的基准大小（最大边80px）
+    const maxSize = 80;
+    
+    if (aspectRatio >= 1) {
+        // 游戏画面是横屏或正方形
+        radar.style.width = maxSize + 'px';
+        radar.style.height = (maxSize / aspectRatio) + 'px';
+    } else {
+        // 游戏画面是竖屏
+        radar.style.height = maxSize + 'px';
+        radar.style.width = (maxSize * aspectRatio) + 'px';
+    }
+}
+
 // 初始化
 async function init() {
     console.log('Game init started');
+    
+    // 初始化 CrazyGames SDK
+    try {
+        console.log('Initializing CrazyGames SDK...');
+        await window.CrazyGames.SDK.init();
+        console.log('CrazyGames SDK initialized successfully');
+        console.log('Environment:', window.CrazyGames.SDK.environment);
+    } catch (error) {
+        console.warn('Error initializing CrazyGames SDK:', error);
+    }
     
     // 显示加载界面
     if (loadingModal) {
@@ -335,6 +354,9 @@ async function init() {
             loadingModal.style.display = 'none';
         }
     }
+    
+    // 先更新雷达尺寸
+    updateRadarSize();
     
     initCanvas();
     updateBackground();
@@ -490,7 +512,7 @@ const levelConfigs = {
 };
 
 // 创建单个蚊子
-function createMosquito(mosquitoId) {
+function createMosquito(mosquitoId, index) {
     const mosquito = document.createElement('div');
     mosquito.className = 'mosquito mosquito-image-only';
     mosquito.style.left = Math.random() * 80 + 10 + '%';
@@ -506,7 +528,8 @@ function createMosquito(mosquitoId) {
     
     let mosquitoData = {
         element: mosquito,
-        id: mosquitoId,
+        id: `${mosquitoId}-${Date.now()}-${index}`, // 唯一ID
+        type: mosquitoId, // 保持类型信息
         x: parseFloat(mosquito.style.left),
         y: parseFloat(mosquito.style.top),
         vx: (Math.random() - 0.5) * 0.5,
@@ -609,7 +632,7 @@ function spawnMosquitoes() {
     for (let mosquitoId = 1; mosquitoId <= 5; mosquitoId++) {
         const count = config[mosquitoId] || 0;
         for (let i = 0; i < count; i++) {
-            const mosquitoData = createMosquito(mosquitoId);
+            const mosquitoData = createMosquito(mosquitoId, i);
             gameState.mosquitoes.push(mosquitoData);
         }
     }
@@ -638,6 +661,9 @@ function updateRadarDots() {
         
         const dot = document.createElement('div');
         dot.className = 'radar-dot';
+        
+        // 雷达现在已经和游戏画面同比例，直接按百分比映射
+        // 留出10%的边距
         dot.style.left = (m.x / 100 * 80 + 10) + '%';
         dot.style.top = (m.y / 100 * 80 + 10) + '%';
         radar.appendChild(dot);
@@ -1106,17 +1132,17 @@ function bindEvents() {
             };
         }
         
-        // 长按检测：1秒后激活激光瞄准线
+        // 长按检测：0.5秒后激活激光瞄准线
         longPressTimer = setTimeout(() => {
-            if (gameState.energy >= LASER_COST) {
+            if (gameState.energy >= gameState.maxEnergy / 2) {
                 // 消耗能量
-                gameState.energy = Math.max(0, gameState.energy - LASER_COST);
+                gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy / 2);
                 updateEnergyBar();
                 
                 // 激活激光瞄准线
                 activateLaser();
             }
-        }, 1000);
+        }, 500);
         
         // 更新调试显示
         const debugInfo = document.getElementById('debugInfo');
@@ -1463,18 +1489,18 @@ function bindEvents() {
         if (e.button === 2) {
             e.preventDefault();
             
-            // 长按检测：1秒后激活激光瞄准线
+            // 长按检测：0.5秒后激活激光瞄准线
             mouseDownTime = now;
             longPressTimer = setTimeout(() => {
-                if (gameState.energy >= LASER_COST) {
+                if (gameState.energy >= gameState.maxEnergy / 2) {
                     // 消耗能量
-                    gameState.energy = Math.max(0, gameState.energy - LASER_COST);
+                    gameState.energy = Math.max(0, gameState.energy - gameState.maxEnergy / 2);
                     updateEnergyBar();
                     
                     // 激活激光瞄准线
                     activateLaser();
                 }
-            }, 1000);
+            }, 500);
         }
     });
     
@@ -1482,10 +1508,10 @@ function bindEvents() {
         if (longPressTimer) {
             clearTimeout(longPressTimer);
             
-            // 如果是右键且没有长按超过1秒，则发射追踪飞弹
+            // 如果是右键且没有长按超过0.5秒，则发射追踪飞弹
             if (e.button === 2) {
                 const now = Date.now();
-                if (now - mouseDownTime < 1000) {
+                if (now - mouseDownTime < 500) {
                     // 防抖动：300ms内只能发射一次
                     if (now - lastFireTime < 300) {
                         return;
@@ -1727,28 +1753,19 @@ function createBullet() {
     const bullet = document.createElement('div');
     bullet.className = 'bullet';
     
-    // 获取游戏区域的位置和尺寸
+    // 获取游戏区域的位置
     const gameAreaRect = gameArea.getBoundingClientRect();
     
-    // 计算炮口位置（炮筒末端）
+    // 获取炮筒旋转角度
     const angleRad = gameState.cannonAngle * Math.PI / 180;
-    const cannonLength = cannonBarrel.offsetWidth;
     
-    // 炮筒旋转中心（根据CSS计算）
-    // left: 50%, margin-left: -5px
-    const pivotX = gameAreaRect.width / 2 - 5;
-    // 炮筒在游戏区域下方，需要获取炮筒相对于游戏区域的实际位置
-    const cannonRect = cannonBarrel.getBoundingClientRect();
-    // 炮筒旋转中心是CSS中的transform-origin: left center
-    // 也就是炮筒的左端中心点
-    const pivotY = cannonRect.top + cannonRect.height / 2 - gameAreaRect.top;
+    // 获取炮口元素的位置（最准确的方式）
+    const muzzleElement = document.querySelector('.cannon-muzzle');
+    const muzzleRect = muzzleElement.getBoundingClientRect();
     
-    // 炮口位置（右端点，根据角度计算）
-    const startX = pivotX + Math.cos(angleRad) * cannonLength;
-    const startY = pivotY + Math.sin(angleRad) * cannonLength;
-    
-    console.log('pivotY:', pivotY, 'gameAreaRect.top:', gameAreaRect.top, 'gameAreaRect.height:', gameAreaRect.height);
-    console.log('cannonRect.top:', cannonRect.top, 'cannonRect.height:', cannonRect.height);
+    // 计算炮口中心点相对于游戏区域的位置
+    const startX = muzzleRect.left + muzzleRect.width / 2 - gameAreaRect.left;
+    const startY = muzzleRect.top + muzzleRect.height / 2 - gameAreaRect.top;
     
     // 设置炮弹初始位置（居中）
     bullet.style.left = (startX - 7.5) + 'px';
@@ -1916,6 +1933,16 @@ function showGameOver(reason = 'win') {
     // 保存最高分数
     saveHighScore();
     
+    // 调用SDK的游戏结束事件
+    try {
+        if (window.CrazyGames && window.CrazyGames.SDK) {
+            console.log('Calling SDK.gameplayStop()');
+            window.CrazyGames.SDK.game.gameplayStop();
+        }
+    } catch (error) {
+        console.warn('Error calling SDK.gameplayStop():', error);
+    }
+    
     // 根据游戏结束原因设置不同的提示信息
     const gameOverText = document.querySelector('#gameOverModal .modal-content h2');
     const gameOverMessage = document.querySelector('#gameOverModal .modal-content p');
@@ -2033,6 +2060,16 @@ async function restartGame() {
         // 重新开始背景音乐
         bgmStarted = true;
         resumeBGM();
+        
+        // 调用SDK的游戏开始事件
+        try {
+            if (window.CrazyGames && window.CrazyGames.SDK) {
+                console.log('Calling SDK.gameplayStart()');
+                window.CrazyGames.SDK.game.gameplayStart();
+            }
+        } catch (error) {
+            console.warn('Error calling SDK.gameplayStart():', error);
+        }
     }
 }
 
@@ -2062,6 +2099,16 @@ function showReadyModal() {
         // 重新开始背景音乐
         bgmStarted = true;
         resumeBGM();
+        
+        // 调用SDK的游戏开始事件
+        try {
+            if (window.CrazyGames && window.CrazyGames.SDK) {
+                console.log('Calling SDK.gameplayStart()');
+                window.CrazyGames.SDK.game.gameplayStart();
+            }
+        } catch (error) {
+            console.warn('Error calling SDK.gameplayStart():', error);
+        }
     });
 }
 
@@ -2347,9 +2394,10 @@ function createHomingMissile(target) {
 // 绑定重新开始按钮事件
 restartBtn.addEventListener('click', restartGame);
 
-// 窗口大小改变时重新初始化画布
+// 窗口大小改变时重新初始化画布和雷达尺寸
 window.addEventListener('resize', () => {
     initCanvas();
+    updateRadarSize();
 });
 
 // 启动游戏

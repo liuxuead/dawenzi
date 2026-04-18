@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>打蚊子游戏</title>
+    <title>Mosquito Game</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Load the SDK before your game code -->
+    <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 </head>
 <body>
     <div class="game-container">
@@ -19,17 +21,17 @@
             </div>
             <div class="top-info">
                 <div class="level-section">
-                    <span class="info-label">等级</span>
+                    <span class="info-label">Level</span>
                     <span class="level-value" id="levelValue">1</span>
                 </div>
                 <div class="score-section">
-                    <span class="info-label">分数</span>
+                    <span class="info-label">Score</span>
                     <span class="score-value" id="scoreValue">0</span>
                     <span class="score-separator">/</span>
                     <span class="high-score-value" id="highScoreValue">0</span>
                 </div>
                 <div class="debug-info" id="debugInfo" style="display: none;">
-                    手指数: 0 | 落点: -
+                    Fingers: 0 | Position: -
                 </div>
                 <!-- 说明书按钮 -->
                 <button class="manual-btn" id="manualBtn">📖</button>
@@ -37,7 +39,7 @@
             <div class="player-status">
                 <div class="player-health-section">
                     <div class="game-title">
-                        <span class="title-text">打蚊子大战</span>
+                        <span class="title-text">Mosquito Battle</span>
                     </div>
                     <span class="status-label">HP</span>
                     <div class="player-health-bar">
@@ -45,14 +47,14 @@
                     </div>
                 </div>
                 <div class="energy-section">
-                    <span class="status-label">能量</span>
+                    <span class="status-label">Energy</span>
                     <div class="energy-bar">
                         <div class="energy-fill" id="energyFill"></div>
                     </div>
                 </div>
                 <div class="power-section">
                     <div class="power-bar-wrapper">
-                        <span class="status-label">电力</span>
+                        <span class="status-label">Power</span>
                         <div class="power-bar">
                             <div class="power-fill" id="powerFill"></div>
                         </div>
@@ -92,8 +94,8 @@
                 <button class="arrow-btn left" id="btnLeft"></button>
                 <button class="arrow-btn right" id="btnRight"></button>
             </div>
-            <button class="control-btn green" id="btnGreen" data-color="green">绿</button>
-            <button class="control-btn red" id="btnRed" data-color="red">红</button>
+            <button class="control-btn green" id="btnGreen" data-color="green">Green</button>
+            <button class="control-btn red" id="btnRed" data-color="red">Red</button>
         </div>
     </div>
 
@@ -101,16 +103,16 @@
     <div class="loading-modal" id="loadingModal">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <p>加载中...</p>
+            <p>Loading...</p>
         </div>
     </div>
 
     <!-- 游戏结束弹窗 -->
     <div class="game-over-modal" id="gameOverModal">
         <div class="modal-content">
-            <h2>恭喜！全部消灭！</h2>
-            <p>点击按钮重新开始</p>
-            <button class="restart-btn" id="restartBtn">重新开始</button>
+            <h2>Congratulations! All eliminated!</h2>
+            <p>Click button to restart</p>
+            <button class="restart-btn" id="restartBtn">Restart</button>
         </div>
     </div>
 
@@ -123,34 +125,25 @@
     <div class="manual-modal" id="manualModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>游戏说明书</h2>
+                <h2>Game Manual</h2>
                 <button class="close-btn" id="closeManualBtn">×</button>
             </div>
             <div class="modal-body">
-                <h3>《健康游戏忠告》</h3>
-                <ul>
-                    <li>抵制不良游戏，拒绝盗版游戏。</li>
-                    <li>注意自我保护，谨防受骗上当。</li>
-                    <li>适度游戏益脑，沉迷游戏伤身。</li>
-                    <li>合理安排时间，享受健康生活。</li>
-                </ul>
-                <h3>一. 手势介绍</h3>
+                <h3>1. Controls</h3>
                 <ol>
-                    <li>炮筒转动-推动 ：手指在炮筒附近区域推动，可转动炮筒瞄准---PC端鼠标拖动</li>
-                    <li>炮弹发射-双击/单击 ：手指在炮筒附近区域双击，发射炮弹----pc端单击</li>
-                    <li>激光攻击-长按 ：手指在屏幕上长按1秒----鼠标右键长按1秒</li>
-                    <li>飞弹发射-点击 ：点击蚊子或蚊子附近，飞弹及会瞄准，当心中途阻碍----鼠标右键单击</li>
+                    <li>Cannon Rotation - Drag: Drag near the cannon to rotate and aim --- PC: Mouse drag</li>
+                    <li>Fire Cannon - Double-tap/Click: Double-tap near the cannon to fire --- PC: Single click</li>
+                    <li>Laser Attack - Long Press: Long press on screen for 1 second --- PC: Right-click long press for 1 second</li>
+                    <li>Missile Launch - Click: Click on or near a mosquito, missile will auto-track --- PC: Right-click</li>
                 </ol>
-                <h3>二. 蚊子介绍</h3>
+                <h3>2. Mosquitoes</h3>
                 <ol>
-                    <li>极速蚊子 ：此蚊子飞行速度快于其他蚊子，建议用飞弹</li>
-                    <li>分身蚊子（最大） ：此蚊子可随机给任何一个蚊子做分身，需注意及时消灭</li>
-                    <li>加血蚊子 ：此蚊子会给厚血蚊子加血</li>
-                    <li>厚血蚊子（带血条） ：此蚊子一次攻击无法消灭，需注意</li>
-                    <li>隐身蚊子 ：此蚊子带有隐身功能</li>
+                    <li>Speed Mosquito: Faster than other mosquitoes, recommend using missiles</li>
+                    <li>Clone Mosquito (Largest): Can clone any other mosquito randomly, eliminate it quickly</li>
+                    <li>Healer Mosquito: Can heal thick-blood mosquitoes</li>
+                    <li>Thick-blood Mosquito (with health bar): Cannot be killed with one hit, be careful</li>
+                    <li>Invisible Mosquito: Has stealth ability</li>
                 </ol>
-                <h3>三. 关卡介绍</h3>
-                <p>每关蚊子数量和配比随着等级提升难度增加，需要合理使用三种武器</p>
             </div>
         </div>
     </div>
