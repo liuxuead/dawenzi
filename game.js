@@ -1172,14 +1172,22 @@ function bindEvents() {
     
     // 触摸滑动控制炮筒方向（全屏有效）
     document.addEventListener('touchmove', (e) => {
+        // 检查事件对象是否有效
+        if (!e || !e.touches || e.touches.length === 0) return;
+        
         // 排除按钮区域
-        if (e.target && typeof e.target.closest === 'function' && (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn'))) {
-            return;
+        if (e.target && typeof e.target.closest === 'function') {
+            if (e.target.closest('.controls') || e.target.closest('.control-btn') || e.target.closest('.arrow-btn')) {
+                return;
+            }
         }
         
         // 获取炮底位置
         const cannonBase = document.querySelector('.cannon-base');
-        if (!cannonBase) return;
+        if (!cannonBase) {
+            console.log('找不到炮底元素');
+            return;
+        }
         
         const cannonRect = cannonBase.getBoundingClientRect();
         const cannonBaseX = cannonRect.left + cannonRect.width / 2;
@@ -1204,16 +1212,22 @@ function bindEvents() {
         
         // 直接设置炮筒角度，不使用平滑过渡，确保实时跟随
         gameState.cannonAngle = constrainedAngle;
+        // 同时更新currentLineAngle，确保角度一致
+        currentLineAngle = constrainedAngle + 90; // 转换为红线角度（+90度偏移）
         
         // 更新炮筒显示
         const cannonBarrel = document.getElementById('cannonBarrel');
         if (cannonBarrel) {
             cannonBarrel.style.transformOrigin = '50% 100%'; // 确保旋转中心在炮底
             cannonBarrel.style.transform = `rotate(${gameState.cannonAngle}deg)`;
+        } else {
+            console.log('找不到炮筒元素');
         }
         
         // 阻止默认行为，防止页面滚动
-        e.preventDefault();
+        if (e.cancelable) {
+            e.preventDefault();
+        }
     }, { passive: false });
     
     // 双击炮筒区域充电（绿色按钮功能）
